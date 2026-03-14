@@ -526,7 +526,163 @@
             color: var(--text-muted);
             margin-top: 4px;
             padding: 0 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
+
+        .message.deleted {
+            font-style: italic;
+            opacity: 0.5;
+            background: transparent !important;
+            border: 1px dashed var(--border) !important;
+            box-shadow: none !important;
+            color: var(--text-muted) !important;
+        }
+
+        .msg-reactions {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+            padding: 0 2px;
+        }
+
+        .reaction-badge {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: transform 0.15s;
+            user-select: none;
+        }
+
+        .reaction-badge:hover {
+            transform: scale(1.15);
+        }
+
+        /* ── Reply Quote Bar ── */
+        .reply-bar {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            background: var(--surface);
+            border-left: 3px solid var(--accent);
+            border-radius: 12px 12px 0 0;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin: 0 14px 0 14px;
+            position: relative;
+        }
+
+        .reply-bar.show { display: flex; }
+
+        .reply-bar .reply-text {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-main);
+        }
+
+        .reply-cancel {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0 4px;
+        }
+
+        .reply-quote {
+            background: var(--surface-2);
+            border-left: 3px solid var(--accent);
+            border-radius: 6px 10px 10px 6px;
+            padding: 5px 10px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+
+        /* ── Context Menu ── */
+        .ctx-overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            z-index: 200;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
+        .ctx-overlay.show { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; }
+
+        .ctx-bubble-preview {
+            max-width: 75%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            font-size: 0.93rem;
+            font-weight: 500;
+            color: white;
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.3);
+            text-align: center;
+            word-break: break-word;
+        }
+
+        .ctx-emoji-row {
+            display: flex;
+            gap: 8px;
+            background: var(--surface);
+            border-radius: 40px;
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        }
+
+        .ctx-emoji-btn {
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: transform 0.15s;
+            background: none;
+            border: none;
+            padding: 2px;
+        }
+
+        .ctx-emoji-btn:hover { transform: scale(1.3); }
+
+        .ctx-menu {
+            background: var(--surface);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            min-width: 200px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        }
+
+        .ctx-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        .ctx-menu-item:last-child { border-bottom: none; }
+        .ctx-menu-item:hover { background: var(--surface-2); }
+        .ctx-menu-item.danger { color: #ef4444; }
 
         .message img {
             max-width: 100%;
@@ -1389,6 +1545,11 @@
                 </div>
             </div>
             <div class="chat-history" id="chatHistory"></div>
+            <!-- Reply bar above input -->
+            <div class="reply-bar" id="replyBar">
+                💬 ตอบกลับ: <span class="reply-text" id="replyBarText"></span>
+                <button class="reply-cancel" onclick="cancelReplyMsg()">✕</button>
+            </div>
             <div class="chat-input-area">
                 <div class="politeness-bar" id="politeBar">
                     <div class="politeness-dot" id="politeDot"></div><span id="politeText">วิเคราะห์ข้อความ...</span>
@@ -1459,6 +1620,23 @@
                     <circle cx="12" cy="7" r="4"></circle>
                 </svg>
                 โปรไฟล์
+            </div>
+        </div>
+
+        <!-- Context Menu Overlay -->
+        <div class="ctx-overlay" id="ctxOverlay" onclick="closeCtxMenu()">
+            <div class="ctx-bubble-preview" id="ctxPreview"></div>
+            <div class="ctx-emoji-row" onclick="event.stopPropagation()">
+                <button class="ctx-emoji-btn" onclick="sendReaction('❤️')">❤️</button>
+                <button class="ctx-emoji-btn" onclick="sendReaction('😂')">😂</button>
+                <button class="ctx-emoji-btn" onclick="sendReaction('😮')">😮</button>
+                <button class="ctx-emoji-btn" onclick="sendReaction('👍')">👍</button>
+                <button class="ctx-emoji-btn" onclick="sendReaction('😢')">😢</button>
+            </div>
+            <div class="ctx-menu" onclick="event.stopPropagation()" id="ctxMenu">
+                <div class="ctx-menu-item" onclick="ctxReply()">↩️ &nbsp;ตอบกลับ</div>
+                <div class="ctx-menu-item" onclick="ctxCopy()">📋 &nbsp;คัดลอก</div>
+                <div class="ctx-menu-item danger" id="ctxDeleteBtn" onclick="ctxDelete()">🗑 &nbsp;ลบข้อความ</div>
             </div>
         </div>
 
@@ -1602,11 +1780,14 @@
 
 
         // Data State
-        let myProfile = null; // {friend_id, name, avatar}
+        let myProfile = null;
         let currentChatRoomId = null;
         let currentSuggestion = "";
         let pollInterval = null;
         let selectedAvatarBase64 = "";
+        let isFetchingMessages = false;  // prevent duplicate fetch
+        let currentReplyMsg = null;      // {id, text, sender_name}
+        let ctxActiveMsg = null;         // message object for context menu
 
         // UI Logic
         setInterval(() => { const d = new Date(); document.getElementById('clock').innerText = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`; }, 1000);
@@ -2069,46 +2250,76 @@
 
         async function fetchMessages() {
             if (!currentChatRoomId) return;
+            if (isFetchingMessages) return;  // prevent duplicate concurrent fetches
+            isFetchingMessages = true;
             let afterTs = chatLastTimestamps[currentChatRoomId] || 0;
-            const res = await fetch(`/api/messages/${currentChatRoomId}?after=${afterTs}`);
-            const msgs = await res.json();
+            try {
+                const res = await fetch(`/api/messages/${currentChatRoomId}?after=${afterTs}`);
+                const msgs = await res.json();
 
-            if (msgs.length === 0) return;
-            const chatBox = document.getElementById('chatHistory');
+                if (msgs.length === 0) { isFetchingMessages = false; return; }
+                const chatBox = document.getElementById('chatHistory');
 
-            msgs.forEach(m => {
-                if (m.timestamp > afterTs) afterTs = m.timestamp;
-                const ts = Number(m.timestamp);
-                const d = ts > 0 ? new Date(ts) : new Date();
-                const t = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+                msgs.forEach(m => {
+                    if (m.timestamp > afterTs) afterTs = m.timestamp;
+                    const ts = Number(m.timestamp);
+                    const d = ts > 0 ? new Date(ts) : new Date();
+                    const t = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 
-                let cls = 'other';
-                if (m.sender_id === myProfile.friend_id) cls = 'user';
+                    let cls = 'other';
+                    if (m.sender_id === myProfile.friend_id) cls = 'user';
 
-                let contentHTML = m.text;
-                let isImage = m.text.startsWith('data:image/');
-                if (isImage) {
-                    contentHTML = `<img src="${m.text}" alt="Photo">`;
-                }
+                    let isDeleted = m.text === '__deleted__';
+                    let contentHTML = isDeleted ? '🚫 เพิกถอนข้อความแล้ว' : m.text;
+                    let isImage = !isDeleted && m.text.startsWith('data:image/');
+                    if (isImage) {
+                        contentHTML = `<img src="${m.text}" alt="Photo">`;
+                    }
 
-                let senderNameHtml = '';
-                if (cls === 'other' && currentChatFriend && currentChatFriend.is_group) {
-                    senderNameHtml = `<div style="font-size:0.75rem; color:#94a3b8; margin-bottom:4px; padding-left:2px;">${m.sender_name || 'เพื่อน'}</div>`;
-                }
+                    // Build reply quote if exists
+                    let replyQuoteHtml = '';
+                    if (m.reply_to_text && !isDeleted) {
+                        replyQuoteHtml = `<div class="reply-quote">${m.reply_to_text.startsWith('data:image/') ? '📷 รูปภาพ' : m.reply_to_text}</div>`;
+                    }
 
-                chatBox.innerHTML += `
-                    <div class="message-row ${cls}">
-                        <div style="display:flex; flex-direction:column;">
-                            ${senderNameHtml}
-                            <div class="message ${cls}" style="${isImage ? 'padding: 0; background: transparent; border: none;' : ''}">${contentHTML}</div>
+                    let senderNameHtml = '';
+                    if (cls === 'other' && currentChatFriend && currentChatFriend.is_group) {
+                        senderNameHtml = `<div style="font-size:0.75rem; color:#94a3b8; margin-bottom:4px; padding-left:2px;">${m.sender_name || 'เพื่อน'}</div>`;
+                    }
+
+                    const msgId = m.id;
+                    chatBox.innerHTML += `
+                        <div class="message-row ${cls}" id="msg-${msgId}">
+                            <div style="display:flex; flex-direction:column;">
+                                ${senderNameHtml}
+                                ${replyQuoteHtml}
+                                <div class="message ${cls}${isDeleted ? ' deleted' : ''}" 
+                                     data-id="${msgId}"
+                                     data-text="${isDeleted ? '' : m.text.replace(/"/g,'&quot;').substring(0,200)}"
+                                     data-sender="${m.sender_id}"
+                                     data-sname="${m.sender_name || myProfile.name}"
+                                     style="${isImage ? 'padding: 0; background: transparent; border: none;' : ''}"
+                                     oncontextmenu="openCtxMenu(event, this); return false;"
+                                     ontouchstart="startLongPress(event, this)" ontouchend="endLongPress()" ontouchmove="endLongPress()"
+                                >${contentHTML}</div>
+                            </div>
+                            <div class="message-meta">${cls === 'other' && m.sender_id !== 'SYSTEM' && (!currentChatFriend || !currentChatFriend.is_group) ? 'เพื่อน • ' : ''}${t}</div>
+                            <div class="msg-reactions" id="reactions-${msgId}"></div>
                         </div>
-                        <div class="message-meta">${cls === 'other' && m.sender_id !== 'SYSTEM' && (!currentChatFriend || !currentChatFriend.is_group) ? 'เพื่อน • ' : ''}${t}</div>
-                    </div>
-                `;
-            });
-            chatLastTimestamps[currentChatRoomId] = afterTs;
+                    `;
+                    if (m.reactions) {
+                        // In case server eventually supports reactions, we could render them here
+                    }
+                });
+                chatLastTimestamps[currentChatRoomId] = afterTs;
+                isFetchingMessages = false;
 
-            if (chatBox.scrollHeight - chatBox.scrollTop < chatBox.clientHeight + 250) {
+            } catch(err) {
+                console.error('fetchMessages error:', err);
+                isFetchingMessages = false;
+            }
+
+            if (chatBox.scrollHeight - chatBox.scrollTop < chatBox.clientHeight + 450) {
                 chatBox.scrollTop = chatBox.scrollHeight;
             }
         }
@@ -2253,14 +2464,14 @@
                 document.getElementById('suggestedTextDisplay').innerText = currentSuggestion;
                 document.getElementById('warningPopup').classList.add('show');
             } else {
-                sendMessage(text);
+                sendMessage(text, currentReplyMsg ? currentReplyMsg.id : null, currentReplyMsg ? currentReplyMsg.text : null);
                 document.getElementById('politeBar').classList.remove('show');
             }
         }
 
         document.getElementById('btnUseSuggestion').onclick = () => {
             if (currentSuggestion) {
-                sendMessage(currentSuggestion);
+                sendMessage(currentSuggestion, currentReplyMsg ? currentReplyMsg.id : null, currentReplyMsg ? currentReplyMsg.text : null);
                 document.getElementById('politeBar').classList.remove('show');
             }
             hideWarning();
@@ -2272,19 +2483,146 @@
             document.getElementById('messageInput').focus();
         }
 
-        async function sendMessage(finalText) {
+        async function sendMessage(finalText, replyToId, replyToText) {
             document.getElementById('messageInput').value = '';
             document.getElementById('politeBar').classList.remove('show');
+            cancelReplyMsg();
 
             await fetch('/api/messages', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     room_id: currentChatRoomId,
                     sender_id: myProfile.friend_id,
-                    text: finalText
+                    text: finalText,
+                    reply_to_id: replyToId || null,
+                    reply_to_text: replyToText || null
                 })
             });
-            fetchMessages();
+            // Wait a tiny bit, then fetch (prevents race with polling)
+            setTimeout(fetchMessages, 200);
+        }
+
+        // ── Context Menu Logic ──
+        let longPressTimer = null;
+
+        function startLongPress(event, el) {
+            longPressTimer = setTimeout(() => openCtxMenu(event, el), 500);
+        }
+
+        function endLongPress() {
+            if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+        }
+
+        function openCtxMenu(event, el) {
+            event.preventDefault();
+            endLongPress();
+            const msgId = el.dataset.id;
+            const msgText = el.dataset.text;
+            const senderId = el.dataset.sender;
+            const senderName = el.dataset.sname;
+
+            ctxActiveMsg = { id: msgId, text: msgText, senderId, senderName };
+
+            // Show preview text
+            const preview = document.getElementById('ctxPreview');
+            if (msgText && msgText.startsWith('data:image/')) {
+                preview.innerHTML = '🖼️ รูปภาพ';
+            } else {
+                preview.textContent = msgText ? (msgText.length > 60 ? msgText.substring(0,60)+'...' : msgText) : '🚫 ข้อความถูกลบ';
+            }
+
+            // Show/hide delete button
+            const deleteBtn = document.getElementById('ctxDeleteBtn');
+            deleteBtn.style.display = (senderId === myProfile.friend_id && msgText !== '') ? 'flex' : 'none';
+
+            document.getElementById('ctxOverlay').classList.add('show');
+        }
+
+        function closeCtxMenu() {
+            document.getElementById('ctxOverlay').classList.remove('show');
+            ctxActiveMsg = null;
+        }
+
+        function ctxReply() {
+            if (!ctxActiveMsg) return;
+            currentReplyMsg = ctxActiveMsg;
+            const bar = document.getElementById('replyBar');
+            const txt = ctxActiveMsg.text;
+            document.getElementById('replyBarText').textContent = 
+                txt.startsWith('data:image/') ? '🖼️ รูปภาพ' : (txt.length > 50 ? txt.substring(0,50)+'...' : txt);
+            bar.classList.add('show');
+            closeCtxMenu();
+            document.getElementById('messageInput').focus();
+        }
+
+        function cancelReplyMsg() {
+            currentReplyMsg = null;
+            document.getElementById('replyBar').classList.remove('show');
+        }
+
+        function ctxCopy() {
+            if (!ctxActiveMsg || !ctxActiveMsg.text) return;
+            navigator.clipboard.writeText(ctxActiveMsg.text).catch(() => {});
+            closeCtxMenu();
+        }
+
+        async function ctxDelete() {
+            if (!ctxActiveMsg) return;
+            const msgId = ctxActiveMsg.id;
+            closeCtxMenu();
+            const res = await fetch(`/api/messages/${msgId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sender_id: myProfile.friend_id })
+            });
+            if (res.ok) {
+                // Update bubble immediately in DOM
+                const el = document.querySelector(`.message[data-id="${msgId}"]`);
+                if (el) {
+                    el.innerHTML = '🚫 เพิกถอนข้อความแล้ว';
+                    el.classList.add('deleted');
+                    el.dataset.text = '';
+                }
+            }
+        }
+
+        // In-memory reaction store (client-side only for now)
+        const reactionStore = {};
+
+        function sendReaction(emoji) {
+            if (!ctxActiveMsg) return;
+            const msgId = ctxActiveMsg.id;
+            if (!reactionStore[msgId]) reactionStore[msgId] = {};
+
+            // Toggle off if same
+            const myPrev = reactionStore[msgId][myProfile.friend_id];
+            if (myPrev === emoji) {
+                delete reactionStore[msgId][myProfile.friend_id];
+            } else {
+                reactionStore[msgId][myProfile.friend_id] = emoji;
+            }
+
+            renderReactions(msgId);
+            closeCtxMenu();
+        }
+
+        function renderReactions(msgId) {
+            const container = document.getElementById(`reactions-${msgId}`);
+            if (!container) return;
+            const store = reactionStore[msgId] || {};
+            // Count by emoji
+            const counts = {};
+            for (const [uid, emoji] of Object.entries(store)) {
+                counts[emoji] = (counts[emoji] || 0) + 1;
+            }
+            container.innerHTML = Object.entries(counts).map(([emoji, count]) =>
+                `<span class="reaction-badge" onclick="toggleReactionFromBadge('${msgId}', '${emoji}')">${emoji} ${count}</span>`
+            ).join('');
+        }
+
+        function toggleReactionFromBadge(msgId, emoji) {
+            ctxActiveMsg = { id: msgId };
+            sendReaction(emoji);
         }
 
         // --- FEED & POSTS SYSTEM (Phase 11) ---

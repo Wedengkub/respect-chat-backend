@@ -43,8 +43,13 @@ pool.connect((err, client, release) => {
                 room_id TEXT NOT NULL,
                 sender_id TEXT NOT NULL,
                 text TEXT NOT NULL,
-                timestamp BIGINT NOT NULL
+                timestamp BIGINT NOT NULL,
+                reply_to_id INTEGER,
+                reply_to_text TEXT
             );
+            -- Migration for existing messages table
+            ALTER TABLE messages ADD COLUMN IF NOT EXISTS reply_to_id INTEGER;
+            ALTER TABLE messages ADD COLUMN IF NOT EXISTS reply_to_text TEXT;
             CREATE TABLE IF NOT EXISTS posts (
                 id SERIAL PRIMARY KEY,
                 user_id TEXT NOT NULL,
@@ -233,10 +238,10 @@ app.get('/api/groups/:user_id', async (req, res) => {
 // --- CHAT MESSAGES ---
 
 app.post('/api/messages', async (req, res) => {
-    const { room_id, sender_id, text } = req.body;
+    const { room_id, sender_id, text, reply_to_id, reply_to_text } = req.body;
     try {
-        await dbRun(`INSERT INTO messages (room_id, sender_id, text, timestamp) VALUES (?, ?, ?, ?)`,
-            [room_id, sender_id, text, Date.now()]
+        await dbRun(`INSERT INTO messages (room_id, sender_id, text, timestamp, reply_to_id, reply_to_text) VALUES (?, ?, ?, ?, ?, ?)`,
+            [room_id, sender_id, text, Date.now(), reply_to_id || null, reply_to_text || null]
         );
         res.json({ success: true });
     } catch (err) {
@@ -255,6 +260,21 @@ app.get('/api/messages/:room_id', async (req, res) => {
             ORDER BY m.timestamp ASC
         `, [req.params.room_id, after]);
         res.json(messages);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete a message (only sender can delete)
+app.delete('/api/messages/:id', async (req, res) => {
+    const { sender_id } = req.body;
+    try {
+        const msg = await dbGet(`SELECT sender_id FROM messages WHERE id = ?`, [req.params.id]);
+        if (!msg) return res.status(404).json({ error: 'ไม่พบข้อความ' });
+        if (msg.sender_id !== sender_id) return res.status(403).json({ error: 'ลบได้เฉพาะข้อความของตัวเองเท่านั้น' });
+        // Replace content with a deleted marker instead of fully removing, so both sides see it
+        await dbRun(`UPDATE messages SET text = '__deleted__' WHERE id = ?`, [req.params.id]);
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
