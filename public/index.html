@@ -1,0 +1,2736 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RespectChat - Global Network</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #0a0a1a;
+            --chat-bg: #0f0f23;
+            --surface: #16162a;
+            --surface-2: #1e1e38;
+            --text-main: #f0f0ff;
+            --text-muted: #8585b0;
+            --header-bg: rgba(15, 15, 35, 0.9);
+            --accent: #7c6fe0;
+            --accent-2: #a78bfa;
+            --accent-glow: rgba(124, 111, 224, 0.35);
+            --bubble-user: linear-gradient(135deg, #7c6fe0, #a78bfa);
+            --bubble-text: #ffffff;
+            --bubble-other: #1e1e38;
+            --border: rgba(124, 111, 224, 0.18);
+            --nav-bg: rgba(10, 10, 26, 0.95);
+            --card-bg: #16162a;
+        }
+
+        body.light-mode {
+            --bg-body: #f0effe;
+            --chat-bg: #ffffff;
+            --surface: #f8f7ff;
+            --surface-2: #ede9fe;
+            --text-main: #1a1040;
+            --text-muted: #6b6b9a;
+            --header-bg: rgba(255, 255, 255, 0.92);
+            --bubble-other: #ede9fe;
+            --border: rgba(124, 111, 224, 0.25);
+            --nav-bg: rgba(255, 255, 255, 0.94);
+            --card-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', 'Kanit', sans-serif;
+            background: radial-gradient(ellipse at 20% 50%, #1a0633 0%, #0a0a1a 70%);
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        body.light-mode {
+            background: linear-gradient(135deg, #f0effe, #e9e3ff);
+        }
+
+        /* ── Phone Frame ── */
+        .phone-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            height: 92vh;
+            min-height: 680px;
+            max-height: 920px;
+            background: var(--chat-bg);
+            border-radius: 48px;
+            box-shadow: 0 0 0 1px rgba(124, 111, 224, 0.3), 0 0 80px rgba(124, 111, 224, 0.12), 0 40px 80px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .status-bar {
+            height: 46px;
+            background: var(--header-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 28px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            z-index: 10;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .status-bar .notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 32px;
+            background: var(--chat-bg);
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            z-index: 20;
+        }
+
+        /* ── Views ── */
+        .view {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .view.active {
+            display: flex;
+            animation: fadeSlide 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes msgIn {
+            from {
+                opacity: 0;
+                transform: scale(0.85) translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* ── Header ── */
+        .header {
+            padding: 12px 20px 14px;
+            background: var(--header-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+            font-size: 1.15rem;
+            font-weight: 700;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+
+        /* ── Bottom Nav ── */
+        .bottom-nav {
+            height: 76px;
+            background: var(--nav-bg);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 6px 8px 14px;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.68rem;
+            font-weight: 500;
+            gap: 4px;
+            padding: 6px 14px;
+            border-radius: 16px;
+            min-width: 56px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-item svg {
+            width: 22px;
+            height: 22px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-item.active {
+            color: var(--accent-2);
+            font-weight: 700;
+            background: rgba(124, 111, 224, 0.14);
+        }
+
+        .nav-item.active svg {
+            filter: drop-shadow(0 0 5px var(--accent-glow));
+            transform: scale(1.1);
+        }
+
+        /* ── Register ── */
+        .register-box {
+            padding: 32px 28px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .register-box h2 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .register-box input {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            margin: 8px 0;
+            font-family: inherit;
+            font-size: 1rem;
+            background: var(--surface);
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .register-box input:focus {
+            border-color: var(--accent);
+        }
+
+        .register-box input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 16px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 8px 24px var(--accent-glow);
+            margin-top: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 30px var(--accent-glow);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .avatar-upload {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            background: var(--surface);
+            margin: 0 auto 20px;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 2px dashed var(--accent);
+            background-size: cover;
+            background-position: center;
+        }
+
+        .avatar-upload span {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        #avatarFile {
+            display: none;
+        }
+
+        /* ── Profile Card ── */
+        .my-profile-card {
+            margin: 16px;
+            padding: 22px 20px;
+            background: linear-gradient(135deg, #4c3ccf, #7c6fe0, #a855f7);
+            border-radius: 24px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 16px 40px rgba(124, 111, 224, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .my-profile-card::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            right: -10%;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .my-profile-card .avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-size: cover;
+            border: 2.5px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .my-profile-card .info h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .my-profile-card .info p {
+            font-size: 0.82rem;
+            opacity: 0.85;
+        }
+
+        .qr-btn {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.18);
+            border: none;
+            color: white;
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+        }
+
+        .section-title {
+            padding: 14px 20px 6px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* ── Contacts ── */
+        .contact-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 10px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 11px 10px;
+            border-radius: 18px;
+            cursor: pointer;
+            transition: background 0.18s;
+        }
+
+        .contact-item:hover {
+            background: var(--surface);
+        }
+
+        .contact-item .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-size: cover;
+            background-color: var(--surface-2);
+            flex-shrink: 0;
+        }
+
+        .contact-item .info {
+            flex: 1;
+        }
+
+        .contact-item .info h4 {
+            font-size: 0.97rem;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .contact-item .info p {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ── Add Friend ── */
+        .add-friend-box {
+            padding: 30px 24px;
+            text-align: center;
+        }
+
+        .add-friend-box .icon {
+            width: 80px;
+            height: 80px;
+            background: var(--surface);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            color: var(--accent-2);
+            border: 1px solid var(--border);
+        }
+
+        .add-friend-box input {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            margin: 16px 0;
+            font-family: inherit;
+            font-size: 1.3rem;
+            text-align: center;
+            letter-spacing: 3px;
+            background: var(--surface);
+            color: var(--text-main);
+            outline: none;
+        }
+
+        .add-friend-box input:focus {
+            border-color: var(--accent);
+        }
+
+        /* ── Chat ── */
+        .chat-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .btn-back {
+            background: none;
+            border: none;
+            color: var(--accent-2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 4px;
+            margin-left: -8px;
+        }
+
+        .chat-history {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: var(--chat-bg);
+        }
+
+        .message-row {
+            display: flex;
+            flex-direction: column;
+            max-width: 80%;
+            animation: msgIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .message-row.user {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .message-row.other {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .message {
+            padding: 11px 16px;
+            font-size: 0.93rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            background: var(--bubble-user);
+            color: var(--bubble-text);
+            border-radius: 20px 20px 5px 20px;
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+
+        .message.other {
+            background: var(--bubble-other);
+            border-radius: 20px 20px 20px 5px;
+            border: 1px solid var(--border);
+        }
+
+        .message-meta {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            padding: 0 4px;
+        }
+
+        .message img {
+            max-width: 100%;
+            border-radius: 14px;
+            display: block;
+            max-height: 250px;
+            object-fit: contain;
+        }
+
+        .chat-input-area {
+            padding: 12px 14px;
+            background: var(--header-bg);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            backdrop-filter: blur(20px);
+        }
+
+        .input-wrapper {
+            flex: 1;
+            background: var(--surface);
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            min-height: 46px;
+            transition: border-color 0.2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--accent);
+        }
+
+        .chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.93rem;
+            resize: none;
+            outline: none;
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn-send {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        .btn-send:active {
+            transform: scale(0.9);
+        }
+
+        .btn-photo {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .btn-photo:hover {
+            color: var(--accent-2);
+        }
+
+        .btn-scan-qr {
+            background: var(--surface);
+            color: var(--accent-2);
+            border: 1px solid var(--border);
+            padding: 13px;
+            border-radius: 14px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        /* ── Politeness Bar ── */
+        .politeness-bar {
+            position: absolute;
+            top: -32px;
+            left: 14px;
+            right: 14px;
+            height: 26px;
+            border-radius: 13px;
+            background: var(--surface);
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            font-size: 0.73rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            opacity: 0;
+            transition: all 0.25s;
+            pointer-events: none;
+            border: 1px solid var(--border);
+        }
+
+        .politeness-bar.show {
+            opacity: 1;
+            transform: translateY(-4px);
+        }
+
+        .politeness-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 7px;
+        }
+
+        /* ── Warning Popup ── */
+        .warning-popup {
+            position: absolute;
+            bottom: 100%;
+            left: 14px;
+            right: 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+            transform: translateY(20px) scale(0.96);
+            opacity: 0;
+            transition: all 0.25s;
+            pointer-events: none;
+            z-index: 30;
+        }
+
+        .warning-popup.show {
+            transform: translateY(-8px) scale(1);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .warning-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-main);
+            font-weight: 700;
+            margin-bottom: 14px;
+            font-size: 0.97rem;
+        }
+
+        .icon-circle {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border-radius: 50%;
+            padding: 8px;
+        }
+
+        .suggestion-box {
+            background: var(--surface-2);
+            padding: 13px 16px;
+            border-radius: 14px;
+            margin-bottom: 16px;
+            font-size: 0.92rem;
+            color: var(--text-main);
+            font-style: italic;
+            border: 1px solid var(--border);
+        }
+
+        .warning-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-replace {
+            flex: 2;
+            padding: 12px;
+            background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-cancel {
+            flex: 1;
+            padding: 12px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            border-radius: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* ── QR Modal ── */
+        .qr-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(9, 9, 26, 0.95);
+            z-index: 50;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: white;
+            padding: 20px;
+        }
+
+        .qr-modal img {
+            width: 230px;
+            height: 230px;
+            background: white;
+            padding: 12px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+
+        .qr-modal h2 {
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .qr-modal p {
+            color: #8585b0;
+            margin-bottom: 28px;
+            text-align: center;
+        }
+
+        .qr-modal button {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: white;
+            padding: 13px 32px;
+            border-radius: 20px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* ── Feed ── */
+        .feed-container {
+            flex: 1;
+            overflow-y: auto;
+            background: var(--chat-bg);
+        }
+
+        .post-card {
+            background: var(--card-bg);
+            margin: 10px 12px;
+            padding: 16px;
+            border-radius: 22px;
+            border: 1px solid var(--border);
+            position: relative;
+            transition: border-color 0.2s;
+        }
+
+        .post-card:hover {
+            border-color: rgba(124, 111, 224, 0.35);
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            margin-bottom: 12px;
+        }
+
+        .post-header .avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background-size: cover;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .post-header .info h4 {
+            font-size: 0.93rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .post-header .info p {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        .post-content {
+            font-size: 0.93rem;
+            line-height: 1.6;
+            color: var(--text-main);
+            margin-bottom: 10px;
+            word-break: break-word;
+        }
+
+        .post-image {
+            width: 100%;
+            border-radius: 16px;
+            max-height: 400px;
+            object-fit: cover;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .post-actions button {
+            background: var(--surface-2);
+            border: none;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.83rem;
+            padding: 7px 14px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .post-actions button:hover {
+            background: rgba(124, 111, 224, 0.15);
+            color: var(--accent-2);
+        }
+
+        .floating-btn {
+            position: absolute;
+            bottom: 86px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 6px 24px var(--accent-glow);
+            cursor: pointer;
+            z-index: 20;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .floating-btn:hover {
+            transform: scale(1.08);
+        }
+
+        .floating-btn:active {
+            transform: scale(0.92);
+        }
+
+        /* ── Modals ── */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(9, 9, 26, 0.8);
+            z-index: 60;
+            display: none;
+            align-items: flex-end;
+            backdrop-filter: blur(4px);
+        }
+
+        .create-post-sheet {
+            background: var(--surface);
+            width: 100%;
+            border-radius: 28px 28px 0 0;
+            padding: 24px;
+            animation: slideUp 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+            border: 1px solid var(--border);
+            border-bottom: none;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .create-post-sheet textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            border-radius: 16px;
+            padding: 16px;
+            font-family: inherit;
+            resize: none;
+            font-size: 0.97rem;
+            outline: none;
+            height: 120px;
+            margin-bottom: 14px;
+            color: var(--text-main);
+        }
+
+        .create-post-sheet textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .create-post-sheet textarea:focus {
+            border-color: var(--accent);
+        }
+
+        .sheet-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview-box {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            border: 2px dashed var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .preview-box:hover {
+            border-color: var(--accent);
+        }
+
+        /* ── Comments ── */
+        .comment-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .comment-item .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background-size: cover;
+            flex-shrink: 0;
+        }
+
+        .comment-content {
+            background: var(--surface-2);
+            padding: 10px 14px;
+            border-radius: 6px 16px 16px 16px;
+            font-size: 0.92rem;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        .comment-content h5 {
+            font-size: 0.77rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        /* ── Toast ── */
+        .chat-toast {
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border-radius: 100px;
+            padding: 8px 18px 8px 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1000;
+            transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .chat-toast.show {
+            top: 16px;
+        }
+
+        #notifToast.show {
+            top: 16px;
+        }
+
+        .chat-toast .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-size: cover;
+            flex-shrink: 0;
+        }
+
+        .chat-toast .info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .chat-toast .info h4 {
+            margin: 0;
+            font-size: 0.88rem;
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        .chat-toast .info p {
+            margin: 0;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+</head>
+
+<body id="appBody">
+    <!-- Top-level Toast elements -->
+    <div class="chat-toast" id="chatToast" onclick="toastClickToChat()">
+        <div class="avatar" id="toastAvatar"></div>
+        <div class="info">
+            <h4 id="toastName">Name</h4>
+            <p id="toastMessage">Message preview...</p>
+        </div>
+    </div>
+
+    <div class="chat-toast" id="notifToast" onclick="toastClickToNotif()">
+        <div class="avatar" id="notifToastAvatar"></div>
+        <div class="info">
+            <h4 id="notifToastName">แจ้งเตือนใหม่</h4>
+            <p id="notifToastMessage">...</p>
+        </div>
+    </div>
+
+    <div class="phone-wrapper">
+        <div class="status-bar"><span id="clock">09:41</span>
+            <div class="notch"></div>
+            <div class="status-icons">📶 100%</div>
+        </div>
+
+        <!-- View 1: Register -->
+        <div class="view active" id="view-register">
+            <div class="header">RespectChat</div>
+            <div class="register-box">
+                <h2>สร้างโปรไฟล์</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+                    ยินดีต้อนรับสู่แอปแชทปลอดคำบูลลี่</p>
+                <div class="avatar-upload" id="avatarPreview" onclick="document.getElementById('avatarFile').click()">
+                    <span>เลือกรูป<br>โปรไฟล์</span>
+                </div>
+                <input type="file" id="avatarFile" accept="image/*" onchange="previewAvatar(event)">
+                <input type="text" id="regEmail" placeholder="เบอร์โทรศัพท์" style="margin-bottom: 5px;">
+                <input type="text" id="regName" placeholder="ตั้งชื่อของคุณ (เช่น Bank)" maxlength="20">
+                <button class="btn-primary" onclick="registerUser()">เริ่มใช้งาน</button>
+                <div style="margin: 20px 0; color: #cbd5e1; font-size: 0.9rem;">- หรือเข้าสู่ระบบบัญชีเดิม -</div>
+                <input type="text" id="loginId" placeholder="เบอร์โทรศัพท์ ที่ลงทะเบียนไว้">
+                <button class="btn-primary" style="background:#64748b; margin-top: 10px;"
+                    onclick="loginUser()">เข้าสู่ระบบ</button>
+            </div>
+        </div>
+
+        <!-- View 2: Contacts -->
+        <div class="view" id="view-contacts">
+            <div class="header" style="display:flex; justify-content:space-between; align-items:center;">
+                รายการเพื่อน 🤍
+                <div style="display:flex; align-items:center; gap:16px;">
+                    <button onclick="toggleDarkMode()"
+                        style="background:none; border:none; cursor:pointer; color:inherit; display:flex; align-items:center;">
+                        <svg class="theme-icon-svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                        </svg>
+                    </button>
+                    <button onclick="openNotifications()"
+                        style="background:none; border:none; position:relative; cursor:pointer; color:inherit; display:flex; align-items:center;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <div id="bellGlobalDot"
+                            style="display:none; position:absolute; top:-2px; right:-2px; width:10px; height:10px; background:#ef4444; border-radius:50%;">
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="section-title"
+                style="display:flex; justify-content:space-between; align-items:center; padding-top: 20px;">
+                แชทกลุ่ม
+                <button onclick="openCreateGroupModal()"
+                    style="background:#2563eb; color:white; border:none; border-radius:12px; padding:6px 14px; font-size:0.8rem; cursor:pointer; font-weight:500;">+
+                    สร้างกลุ่ม</button>
+            </div>
+            <div class="contact-list" id="groupList" style="margin-bottom:20px;">
+                <!-- Groups loaded here -->
+            </div>
+            <div class="section-title">เพื่อนของคุณ</div>
+            <div class="contact-list" id="contactList">
+                <!-- Friends loaded here -->
+            </div>
+        </div>
+
+        <!-- View 3: Add Friend -->
+        <div class="view" id="view-addfriend">
+            <div class="header">เพิ่มเพื่อนใหม่</div>
+            <div class="add-friend-box">
+                <div class="icon">
+                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                    </svg>
+                </div>
+                <h3>พิมพ์ Friend ID 6 หลัก</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 5px;">
+                    ขอไอดีเพื่อนของคุณเพื่อเชื่อมต่อห้องแชท</p>
+                <input type="text" id="targetFriendId" placeholder="123-456" maxlength="7">
+                <button class="btn-primary" onclick="addFriend()">เพิ่มเพื่อนเลย</button>
+                <div style="margin: 20px 0; color: #cbd5e1; font-size: 0.9rem;">- หรือ -</div>
+                <button class="btn-scan-qr" onclick="document.getElementById('qrScanInput').click()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    สแกนรูปภาพ QR Code
+                </button>
+                <input type="file" id="qrScanInput" accept="image/*" style="display:none;"
+                    onchange="handleQRScan(event)">
+            </div>
+        </div>
+
+        <!-- View 4: Feed -->
+        <div class="view" id="view-feed">
+            <div class="header" style="display:flex; justify-content:space-between; align-items:center;">
+                ฟีดสาธารณะ 🌐
+                <button onclick="openNotifications()"
+                    style="background:none; border:none; position:relative; cursor:pointer; color:inherit;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <div id="bellGlobalDotFeed"
+                        style="display:none; position:absolute; top:-2px; right:-2px; width:10px; height:10px; background:#ef4444; border-radius:50%;">
+                    </div>
+                </button>
+            </div>
+            <div class="feed-container" id="feedContainer">
+                <!-- Posts load here -->
+            </div>
+            <button class="floating-btn" onclick="openCreatePost()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </button>
+        </div>
+
+        <!-- View: My Profile (Self) -->
+        <div class="view" id="view-myprofile">
+            <div class="header" style="display:flex; justify-content:space-between; align-items:center;">
+                โปรไฟล์ของฉัน ✨
+                <div style="display:flex; align-items:center; gap:16px;">
+                    <button onclick="toggleDarkMode()"
+                        style="background:none; border:none; cursor:pointer; color:inherit; display:flex; align-items:center;">
+                        <svg class="theme-icon-svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="my-profile-card">
+                <div class="avatar" id="myAvatar" style="position:relative; cursor:pointer;"
+                    onclick="document.getElementById('editAvatarInput').click()">
+                    <div
+                        style="position:absolute; bottom:0; right:0; background:#6366f1; border-radius:50%; width:20px; height:20px; display:flex; justify-content:center; align-items:center; color:white; border:2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="3">
+                            <path
+                                d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+                <input type="file" id="editAvatarInput" accept="image/*" style="display:none;"
+                    onchange="handleEditAvatar(event)">
+                <div class="info">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <h3 id="myName" style="margin:0;">Name</h3>
+                        <button onclick="editMyName()"
+                            style="background:none; border:none; cursor:pointer; color:rgba(255,255,255,0.8); margin:0; padding:0; display:flex; align-items:center;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <p style="color:rgba(255,255,255,0.9);">Friend ID: <span id="myFriendId"
+                            style="font-weight: 600; font-size: 1rem; font-family: monospace;">---</span></p>
+                </div>
+                <button class="qr-btn" onclick="showQR()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                </button>
+            </div>
+            <div class="section-title">โพสต์ของคุณ</div>
+            <div class="feed-container" id="myProfileFeedContainer" style="padding-top:0;">
+                <!-- User's own posts will live here -->
+            </div>
+        </div>
+
+        <!-- View: Friend Profile View -->
+        <div class="view" id="view-profile">
+            <div class="header" style="padding-bottom: 10px;">
+                <div class="chat-header">
+                    <button class="btn-back" onclick="switchView('view-contacts')"><svg width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg></button>
+                    <div class="contact-item"
+                        style="padding:0; pointer-events:none; flex:1; justify-content:center; margin-right:24px;">
+                        <h4 style="margin:0; font-size:1.1rem; text-align:center;" id="profileViewName">Profile</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="my-profile-card" style="margin:0; border-radius:0; border-bottom:1px solid #e2e8f0;">
+                <div class="avatar" id="profileViewAvatar" style="width:70px;height:70px;margin:10px auto;"></div>
+                <h3 style="text-align:center; font-size:1.4rem;" id="profileViewTitle">Name</h3>
+            </div>
+            <div class="section-title">โพสต์ทั้งหมด</div>
+            <div class="feed-container" id="profileFeedContainer" style="padding-top:0;">
+                <!-- Profile specific posts -->
+            </div>
+        </div>
+
+        <!-- View 5: Chat Room -->
+        <div class="view" id="view-chat">
+            <div class="header" style="padding-bottom: 10px;">
+                <div class="chat-header">
+                    <button class="btn-back" onclick="switchView('view-contacts')"><svg width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg></button>
+                    <div class="contact-item" style="padding:0; flex:1; cursor:pointer;"
+                        onclick="openProfileFromChat()">
+                        <div class="avatar" id="chatAvatar" style="width:40px;height:40px;"></div>
+                        <div class="info">
+                            <h4 id="chatName">Friend Name</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-history" id="chatHistory"></div>
+            <div class="chat-input-area">
+                <div class="politeness-bar" id="politeBar">
+                    <div class="politeness-dot" id="politeDot"></div><span id="politeText">วิเคราะห์ข้อความ...</span>
+                </div>
+                <div class="warning-popup" id="warningPopup">
+                    <div class="warning-header">
+                        <div class="icon-circle">⚠️</div><span>ประโยคนี้อาจรุนแรงไปนิดนึงน้า 🥺</span>
+                    </div>
+                    <div class="suggestion-box" id="suggestedTextDisplay">...</div>
+                    <div class="warning-actions">
+                        <button class="btn-replace" id="btnUseSuggestion">เปลี่ยนคำ เลี่ยงปะทะ ✨</button>
+                        <button class="btn-cancel" onclick="hideWarning()">ยกเลิก</button>
+                    </div>
+                </div>
+                <button class="btn-photo" onclick="document.getElementById('photoInput').click()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                </button>
+                <input type="file" id="photoInput" accept="image/*" style="display:none;"
+                    onchange="handlePhotoUpload(event)">
+                <div class="input-wrapper"><input type="text" class="chat-input" id="messageInput"
+                        placeholder="พิมพ์ข้อความ..." onkeypress="if(event.key==='Enter') handleSend()"></div>
+                <button class="btn-send" onclick="handleSend()"><svg width="18" height="18" viewBox="0 0 24 24"
+                        fill="white">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                    </svg></button>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav" id="bottomNav" style="display: none;">
+            <div class="nav-item active" onclick="switchView('view-contacts')" style="position:relative;">
+                <div id="navContactDot"
+                    style="position:absolute; top:5px; right:15px; width:8px; height:8px; background:#ef4444; border-radius:50%; display:none;">
+                </div>
+                <!-- Message Square Icon -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                แชท
+            </div>
+            <div class="nav-item" onclick="switchView('view-addfriend')">
+                <!-- User Plus Icon -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                    <line x1="23" y1="11" x2="17" y2="11"></line>
+                </svg>
+                เพิ่ม
+            </div>
+            <div class="nav-item" onclick="switchView('view-feed')">
+                <!-- Layers/Feed Icon -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                    <polyline points="2 12 12 17 22 12"></polyline>
+                    <polyline points="2 17 12 22 22 17"></polyline>
+                </svg>
+                ฟีด
+            </div>
+            <div class="nav-item" onclick="switchView('view-myprofile')">
+                <!-- User Icon -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                โปรไฟล์
+            </div>
+        </div>
+
+        <!-- Create Post Modal -->
+        <div class="modal-overlay" id="createPostModal">
+            <div class="create-post-sheet">
+                <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+                    <span style="font-weight:600; font-size:1.1rem;">สร้างโพสต์ใหม่ ✨</span>
+                    <button style="background:none; border:none; font-size:1.5rem; color:#94a3b8;"
+                        onclick="closeCreatePost()">&times;</button>
+                </div>
+                <div class="warning-popup" id="postWarningPopup"
+                    style="position:relative; transform:none; opacity:1; pointer-events:auto; display:none; margin-bottom:15px;">
+                    <div class="warning-header">
+                        <div class="icon-circle">⚠️</div><span>ระวัง! แคปชั่นนนี้อาจรุนแรงไป</span>
+                    </div>
+                    <div class="suggestion-box" id="postSuggestedText">...</div>
+                    <div class="warning-actions">
+                        <button class="btn-replace" onclick="applyPostSuggestion()">เปลี่ยนคำ ✨</button>
+                    </div>
+                </div>
+                <textarea id="postCaption" placeholder="คิดอะไรอยู่? (พิมพ์คำสุภาพกันนะ)"></textarea>
+                <div class="sheet-actions">
+                    <div class="preview-box" id="postImagePreview"
+                        onclick="document.getElementById('postImgInput').click()">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                    </div>
+                    <input type="file" id="postImgInput" accept="image/*" style="display:none;"
+                        onchange="previewPostImg(event)">
+                    <button class="btn-primary" style="width: auto; padding: 12px 30px;"
+                        onclick="submitPost()">โพสต์เลย</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Group Modal -->
+        <div class="modal-overlay" id="createGroupModal">
+            <div class="create-post-sheet"
+                style="max-height:85vh; overflow-y:auto; display:flex; flex-direction:column; padding: 24px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+                    <span style="font-weight:600; font-size:1.1rem;">สร้างกลุ่มใหม่ 👥</span>
+                    <button style="background:none; border:none; font-size:1.5rem; color:#94a3b8; cursor:pointer;"
+                        onclick="closeCreateGroupModal()">&times;</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
+                    <div class="preview-box" id="groupAvatarPreview"
+                        onclick="document.getElementById('groupAvatarInput').click()"
+                        style="border-radius:50%; width:60px; height:60px; flex-shrink:0;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                    </div>
+                    <input type="file" id="groupAvatarInput" accept="image/*" style="display:none;"
+                        onchange="previewGroupAvatar(event)">
+                    <input type="text" id="groupNameInput" class="chat-input" placeholder="ตั้งชื่อกลุ่ม..."
+                        style="flex:1; border:1px solid #e2e8f0; border-radius:12px; padding:10px; outline:none; font-family:inherit;">
+                </div>
+                <div style="font-weight:600; margin-bottom:12px; font-size:0.9rem; color:#475569;">เลือกเพื่อนเข้ากลุ่ม:
+                </div>
+                <div id="groupMembersSelection"
+                    style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px; flex:1; overflow-y:auto;">
+                    <!-- Checkbox list of friends -->
+                </div>
+                <button class="btn-primary" style="margin-top:auto;" onclick="submitCreateGroup()">สร้างกลุ่ม</button>
+            </div>
+        </div>
+
+        <!-- Comments Modal -->
+        <div class="modal-overlay" id="commentsModal">
+            <div class="create-post-sheet" style="height: 80vh; display:flex; flex-direction:column; padding: 20px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+                    <span style="font-weight:600; font-size:1.1rem;">ความคิดเห็น 💬</span>
+                    <button style="background:none; border:none; font-size:1.5rem; color:#94a3b8;"
+                        onclick="closeComments()">&times;</button>
+                </div>
+                <!-- Mini Warning for comments -->
+                <div class="warning-popup" id="commentWarningPopup"
+                    style="position:relative; transform:none; opacity:1; pointer-events:auto; display:none; margin-bottom:15px;">
+                    <div class="warning-header">
+                        <div class="icon-circle">⚠️</div><span>ระวัง! คอมเมนต์นี้อาจรุนแรงไป</span>
+                    </div>
+                    <div class="suggestion-box" id="commentSuggestedText">...</div>
+                    <div class="warning-actions">
+                        <button class="btn-replace" onclick="applyCommentSuggestion()">เปลี่ยนคำ ✨</button>
+                    </div>
+                </div>
+                <div id="commentsList"
+                    style="flex:1; overflow-y:auto; margin-bottom:15px; display:flex; flex-direction:column; gap:10px;">
+                    <!-- Comments here -->
+                </div>
+                <!-- Reply Indicator -->
+                <div id="replyingIndicator"
+                    style="display:none; background:var(--nav-bg); padding:8px 12px; border-radius:8px; margin-bottom:10px; font-size:0.85rem; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center;">
+                    <span>กำลังตอบกลับคอมเมนต์...</span>
+                    <button onclick="cancelReply()"
+                        style="background:none; border:none; cursor:pointer; color:#ef4444; font-weight:600;">✕</button>
+                </div>
+                <div class="chat-input-area" style="padding:0; border:none; position:relative;">
+                    <div class="input-wrapper"><input type="text" class="chat-input" id="commentInput"
+                            placeholder="พิมพ์ความคิดเห็น..." onkeypress="if(event.key==='Enter') evaluateComment()">
+                    </div>
+                    <button class="btn-send" onclick="evaluateComment()"><svg width="18" height="18" viewBox="0 0 24 24"
+                            fill="white">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                        </svg></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications Modal -->
+        <div class="modal-overlay" id="notificationsModal">
+            <div class="create-post-sheet" style="height: 70vh; display:flex; flex-direction:column; padding: 20px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+                    <span style="font-weight:600; font-size:1.1rem;">การแจ้งเตือน 🔔</span>
+                    <button style="background:none; border:none; font-size:1.5rem; color:#94a3b8;"
+                        onclick="closeNotifications()">&times;</button>
+                </div>
+                <div id="notificationsList"
+                    style="flex:1; overflow-y:auto; margin-bottom:15px; display:flex; flex-direction:column; gap:10px;">
+                    <!-- Notifications here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Modal -->
+        <div class="qr-modal" id="qrModal">
+            <h2>QR Code ของฉัน</h2>
+            <p>สแกนเพื่อเพิ่มเพื่อนใน RespectChat</p>
+            <img id="qrImage" src="" alt="QR">
+            <button onclick="document.getElementById('qrModal').style.display='none'">ปิดหน้าต่าง</button>
+        </div>
+    </div>
+
+    <script>
+
+
+        // Data State
+        let myProfile = null; // {friend_id, name, avatar}
+        let currentChatRoomId = null;
+        let currentSuggestion = "";
+        let pollInterval = null;
+        let selectedAvatarBase64 = "";
+
+        // UI Logic
+        setInterval(() => { const d = new Date(); document.getElementById('clock').innerText = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`; }, 1000);
+
+        // Image Compression utility
+        function compressImage(base64Str, maxWidth, maxHeight, callback) {
+            const img = new Image();
+            img.onload = function () {
+                let width = img.width;
+                let height = img.height;
+                if (width > height && width > maxWidth) {
+                    height *= maxWidth / width;
+                    width = maxWidth;
+                } else if (height > maxHeight) {
+                    width *= maxHeight / height;
+                    height = maxHeight;
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width; canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                callback(canvas.toDataURL('image/jpeg', 0.7)); // Compress to 70% JPEG
+            };
+            img.src = base64Str;
+        }
+
+        function previewAvatar(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    compressImage(e.target.result, 400, 400, (compressedBase64) => {
+                        selectedAvatarBase64 = compressedBase64;
+                        document.getElementById('avatarPreview').style.backgroundImage = `url('${selectedAvatarBase64}')`;
+                        document.getElementById('avatarPreview').innerHTML = '';
+                    });
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function switchView(viewId) {
+            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if (viewId === 'view-contacts') {
+                document.querySelectorAll('.nav-item')[0].classList.add('active');
+                document.getElementById('bottomNav').style.display = 'flex';
+                fetchContacts();
+                if (pollInterval) clearInterval(pollInterval);
+            } else if (viewId === 'view-addfriend') {
+                document.querySelectorAll('.nav-item')[1].classList.add('active');
+                document.getElementById('bottomNav').style.display = 'flex';
+                if (pollInterval) clearInterval(pollInterval);
+            } else if (viewId === 'view-feed') {
+                document.querySelectorAll('.nav-item')[2].classList.add('active');
+                document.getElementById('bottomNav').style.display = 'flex';
+                fetchPosts();
+                if (pollInterval) clearInterval(pollInterval);
+            } else if (viewId === 'view-myprofile') {
+                document.querySelectorAll('.nav-item')[3].classList.add('active');
+                document.getElementById('bottomNav').style.display = 'flex';
+                fetchPosts(myProfile.friend_id, true);
+                if (pollInterval) clearInterval(pollInterval);
+            } else if (viewId === 'view-chat') {
+                document.getElementById('bottomNav').style.display = 'none';
+                pollInterval = setInterval(fetchMessages, 1500);
+            }
+        }
+
+        function showQR() {
+            if (!myProfile) return;
+            document.getElementById('qrImage').src = `/api/qr/${myProfile.friend_id}.png`;
+            document.getElementById('qrModal').style.display = 'flex';
+        }
+
+        // API Calls
+        async function registerUser() {
+            const phone = document.getElementById('regEmail').value.trim();
+            const name = document.getElementById('regName').value.trim();
+            if (!phone || !name) return alert("กรุณาใส่เบอร์โทรศัพท์และชื่อให้ครบครับ");
+
+            const res = await fetch('/api/register', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone_number: phone, name: name, avatar: selectedAvatarBase64 })
+            });
+            const data = await res.json();
+            if (data.error) return alert(data.error);
+
+            myProfile = data;
+            localStorage.setItem('rs_phone_number', myProfile.phone_number);
+
+            document.getElementById('myName').innerText = myProfile.name;
+            document.getElementById('myFriendId').innerText = myProfile.friend_id;
+            document.getElementById('myAvatar').style.backgroundImage = `url('${myProfile.avatar}')`;
+
+            switchView('view-contacts');
+        }
+
+        // --- Group Chat Create Modal Logic ---
+        let selectedGroupAvatarBase64 = "";
+
+        function openCreateGroupModal() {
+            document.getElementById('createGroupModal').style.display = 'flex';
+            document.getElementById('groupNameInput').value = '';
+            document.getElementById('groupAvatarPreview').style.backgroundImage = '';
+            document.getElementById('groupAvatarPreview').innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+            selectedGroupAvatarBase64 = "";
+
+            const sel = document.getElementById('groupMembersSelection');
+            sel.innerHTML = '';
+            // Render from contacts, filter out groups
+            cachedFriendsList.filter(f => !f.is_group).forEach(f => {
+                sel.innerHTML += `
+                    <label style="display:flex; align-items:center; gap:10px; padding:8px; background:#f8fafc; border-radius:12px; cursor:pointer;">
+                        <input type="checkbox" value="${f.friend_id}" class="group-member-cb" style="width:20px;height:20px;">
+                        <div class="avatar" style="background-image:url('${f.avatar}'); width:30px; height:30px; border-radius:50%; background-size:cover;"></div>
+                        <div style="flex:1; font-size:0.95rem;">${f.name}</div>
+                    </label>
+                `;
+            });
+            if (cachedFriendsList.filter(f => !f.is_group).length === 0) {
+                sel.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">ต้องเพิ่มเพื่อนก่อนน้า ถึงจะสร้างกลุ่มได้</div>';
+            }
+        }
+
+        function closeCreateGroupModal() {
+            document.getElementById('createGroupModal').style.display = 'none';
+        }
+
+        function previewGroupAvatar(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    compressImage(e.target.result, 400, 400, (b64) => {
+                        selectedGroupAvatarBase64 = b64;
+                        document.getElementById('groupAvatarPreview').style.backgroundImage = `url('${b64}')`;
+                        document.getElementById('groupAvatarPreview').innerHTML = '';
+                    });
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function submitCreateGroup() {
+            const gName = document.getElementById('groupNameInput').value.trim();
+            if (!gName) return alert('กรุณาตั้งชื่อกลุ่ม');
+
+            const checkboxes = document.querySelectorAll('.group-member-cb:checked');
+            const members = [myProfile.friend_id]; // Add self
+            checkboxes.forEach(cb => members.push(cb.value));
+
+            if (members.length < 2) return alert('กรุณาเลือกเพื่อนเข้ากลุ่มอย่างน้อย 1 คน');
+
+            const res = await fetch('/api/groups', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: gName,
+                    avatar: selectedGroupAvatarBase64,
+                    members: members
+                })
+            });
+
+            if (res.ok) {
+                closeCreateGroupModal();
+                fetchContacts(); // Refreshes both friends and groups
+            } else {
+                alert("สร้างกลุ่มไม่สำเร็จ");
+            }
+        }
+        // --- End Group Logic ---
+
+        async function loginUser(phoneParam = null) {
+            const phone = phoneParam ? phoneParam : document.getElementById('loginId').value.trim();
+            if (!phone) return alert("กรุณากรอกเบอร์โทรศัพท์ครับ");
+
+            const res = await fetch('/api/login', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone_number: phone })
+            });
+
+            if (res.ok) {
+                myProfile = await res.json();
+                localStorage.setItem('rs_phone_number', myProfile.phone_number);
+                document.getElementById('myName').innerText = myProfile.name;
+                document.getElementById('myFriendId').innerText = myProfile.friend_id;
+                document.getElementById('myAvatar').style.backgroundImage = `url('${myProfile.avatar}')`;
+                switchView('view-contacts');
+            } else if (!fidParam) {
+                alert("ไม่พบบัญชีนี้ในระบบครับ");
+            }
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('rs_light_mode', isLight);
+
+            const sunIcon = `<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>`;
+            const moonIcon = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
+            const svgContent = isLight ? moonIcon : sunIcon;
+
+            document.querySelectorAll('.theme-icon-svg').forEach(el => el.innerHTML = svgContent);
+        }
+
+        async function checkSession() {
+            const savedLight = localStorage.getItem('rs_light_mode');
+            if (savedLight === 'true') document.body.classList.add('light-mode');
+
+            const savedPhone = localStorage.getItem('rs_phone_number');
+            if (savedPhone) {
+                await loginUser(savedPhone);
+            }
+        }
+
+        window.addEventListener('load', checkSession);
+
+        // Notifications Poller
+        let notificationInterval = null;
+        let lastReadTimestamps = JSON.parse(localStorage.getItem('rs_last_read') || '{}');
+        let chatNotifiedTimestamps = JSON.parse(localStorage.getItem('rs_last_toast') || '{}');
+        let cachedFriendsList = [];
+
+        // Add Toast Logic
+        let toastTimeout = null;
+        let activeToastFriend = null;
+
+        function showChatToast(friendId, text) {
+            const friend = cachedFriendsList.find(f => f.friend_id === friendId);
+            if (!friend) return; // Ignore if not a friend
+
+            activeToastFriend = friend;
+            document.getElementById('toastAvatar').style.backgroundImage = `url('${friend.avatar}')`;
+            document.getElementById('toastName').innerText = friend.name;
+            document.getElementById('toastMessage').innerText = text.startsWith('data:image/') ? '[ส่งรูปภาพ]' : text;
+
+            const toast = document.getElementById('chatToast');
+            toast.classList.add('show');
+
+            // Save notified memory
+            localStorage.setItem('rs_last_toast', JSON.stringify(chatNotifiedTimestamps));
+
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000); // hide after 4 seconds
+        }
+
+        function toastClickToChat() {
+            const toast = document.getElementById('chatToast');
+            toast.classList.remove('show');
+            if (activeToastFriend) {
+                openChat(activeToastFriend);
+            }
+        }
+
+        let notifToastTimeout = null;
+        let notifToastedIds = JSON.parse(localStorage.getItem('rs_last_notif_toasted') || '{}');
+        let activeNotifPostId = null;
+
+        function showNotifToast(notifId, postId, avatar, name, action) {
+            document.getElementById('notifToastAvatar').style.backgroundImage = `url('${avatar}')`;
+            activeNotifPostId = postId;
+
+            let actionText = "มีการโต้ตอบกับคุณ";
+            if (action === 'like') actionText = "กดถูกใจโพสต์ของคุณ";
+            if (action === 'comment') actionText = "แสดงความคิดเห็นในโพสต์ของคุณ";
+            if (action === 'reply') actionText = "ตอบกลับคอมเมนต์ของคุณ";
+
+            document.getElementById('notifToastName').innerText = name;
+            document.getElementById('notifToastMessage').innerText = actionText;
+
+            const toast = document.getElementById('notifToast');
+            toast.classList.add('show');
+
+            notifToastedIds[notifId] = true;
+            localStorage.setItem('rs_last_notif_toasted', JSON.stringify(notifToastedIds));
+
+            if (notifToastTimeout) clearTimeout(notifToastTimeout);
+            notifToastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        function toastClickToNotif() {
+            const toast = document.getElementById('notifToast');
+            toast.classList.remove('show');
+            if (activeNotifPostId) {
+                jumpToPost(activeNotifPostId);
+            } else {
+                openNotifications();
+            }
+        }
+
+        function startNotificationPolling() {
+            if (notificationInterval) clearInterval(notificationInterval);
+            notificationInterval = setInterval(async () => {
+                if (!myProfile) return;
+
+                // Fetch chat notifications
+                const res = await fetch('/api/chat_sync/' + myProfile.friend_id);
+                const data = await res.json();
+                let hasGlobalUnread = false;
+
+                for (const fid in data) {
+                    const msg = data[fid];
+                    const lastRead = lastReadTimestamps[myProfile.friend_id + '_' + fid] || 0;
+
+                    if (msg.sender_id === fid && msg.timestamp > lastRead) {
+                        // In chat room?
+                        if (document.getElementById('view-chat').classList.contains('active') && currentChatRoomId && currentChatRoomId.includes(fid)) {
+                            lastReadTimestamps[myProfile.friend_id + '_' + fid] = msg.timestamp;
+                            localStorage.setItem('rs_last_read', JSON.stringify(lastReadTimestamps));
+                        } else {
+                            hasGlobalUnread = true;
+                            const dot = document.getElementById('dot_' + fid);
+                            if (dot) dot.style.display = 'block';
+
+                            // Check if we already toasted for this specific message timestamp
+                            const lastToasted = chatNotifiedTimestamps[myProfile.friend_id + '_' + fid] || 0;
+                            if (msg.timestamp > lastToasted) {
+                                chatNotifiedTimestamps[myProfile.friend_id + '_' + fid] = msg.timestamp;
+                                showChatToast(fid, msg.text);
+                            }
+                        }
+                    }
+                }
+
+                document.getElementById('navContactDot').style.display = hasGlobalUnread ? 'block' : 'none';
+
+                // Fetch social notifications (likes/comments)
+                const notReq = await fetch(`/api/notifications/${myProfile.friend_id}`);
+                const notData = await notReq.json();
+                const hasUnreadNotifs = notData.some(n => n.read_status === 0);
+
+                notData.forEach(n => {
+                    if (n.read_status === 0 && !notifToastedIds[n.id]) {
+                        showNotifToast(n.id, n.post_id, n.actor_avatar, n.actor_name, n.action_type);
+                    }
+                });
+
+                const bell1 = document.getElementById('bellGlobalDot');
+                const bell2 = document.getElementById('bellGlobalDotFeed');
+                if (bell1) bell1.style.display = hasUnreadNotifs ? 'block' : 'none';
+                if (bell2) bell2.style.display = hasUnreadNotifs ? 'block' : 'none';
+
+            }, 3000);
+        }
+
+        async function fetchContacts() {
+            if (!myProfile) return;
+            const res = await fetch(`/api/friends/${myProfile.friend_id}`);
+            const friends = await res.json();
+
+            cachedFriendsList = friends; // For toast lookups
+
+            const list = document.getElementById('contactList');
+            list.innerHTML = '';
+
+            if (friends.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding: 40px; color:#94a3b8; font-size:0.9rem;">ยังไม่มีเพื่อนเลย<br>กดแท็บ "เพิ่มเพื่อน" ด้านล่างสิ!</div>';
+            }
+
+            friends.forEach(f => {
+                const div = document.createElement('div');
+                div.className = 'contact-item';
+                div.innerHTML = `
+                    <div class="avatar" style="background-image: url('${f.avatar}')" onclick="openProfile({name:'${f.name}', friend_id:'${f.friend_id}', avatar:'${f.avatar}'}); event.stopPropagation();"></div>
+                    <div class="info" onclick="openChat({name:'${f.name}', friend_id:'${f.friend_id}', avatar:'${f.avatar}'})"><h4>${f.name}</h4><p>${f.friend_id}</p></div>
+                    <div id="dot_${f.friend_id}" style="width:10px; height:10px; background:#ef4444; border-radius:50%; display:none;"></div>
+                `;
+                list.appendChild(div);
+            });
+
+            // Fetch Groups
+            const gRes = await fetch(`/api/groups/${myProfile.friend_id}`);
+            const groups = await gRes.json();
+
+            const groupList = document.getElementById('groupList');
+            groupList.innerHTML = '';
+            if (groups.length === 0) {
+                groupList.innerHTML = '<div style="text-align:center; padding: 20px; color:#94a3b8; font-size:0.9rem;">ยังไม่มีแชทกลุ่ม</div>';
+            }
+
+            groups.forEach(g => {
+                const defaultGroupAvatar = 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M17%2021v-2a4%204%200%200%200-4-4H5a4%204%200%200%200-4%204v2%22%3E%3C%2Fpath%3E%3Ccircle%20cx%3D%229%22%20cy%3D%227%22%20r%3D%224%22%3E%3C%2Fcircle%3E%3Cpath%20d%3D%22M23%2021v-2a4%204%200%200%200-3-3.87%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M16%203.13a4%204%200%200%201%200%207.75%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E';
+                // Add to cached friendly list for Toast alerts
+                cachedFriendsList.push({
+                    friend_id: g.group_id,
+                    name: g.name,
+                    avatar: g.avatar || defaultGroupAvatar,
+                    is_group: true
+                });
+
+                const div = document.createElement('div');
+                div.className = 'contact-item';
+                const avatarImg = g.avatar || defaultGroupAvatar;
+                div.innerHTML = `
+                    <div class="avatar" style="background-image: url('${avatarImg}')"></div>
+                    <div class="info" onclick="openChat({name:'${g.name.replace(/'/g, "\\'")}', friend_id:'${g.group_id}', avatar:'${avatarImg}', is_group:true})"><h4>${g.name}</h4><p>${g.members.length} สมาชิก</p></div>
+                    <div id="dot_${g.group_id}" style="width:10px; height:10px; background:#ef4444; border-radius:50%; display:none;"></div>
+                `;
+                groupList.appendChild(div);
+            });
+
+            if (!notificationInterval) startNotificationPolling();
+        }
+
+        async function addFriend() {
+            const fid = document.getElementById('targetFriendId').value.trim();
+            if (!fid) return;
+
+            const res = await fetch('/api/add_friend', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ my_id: myProfile.friend_id, target_friend_id: fid })
+            });
+            const data = await res.json();
+            if (data.error) alert(data.error);
+            else {
+                alert(`เพิ่ม ${data.name} เป็นเพื่อนสำเร็จ!`);
+                document.getElementById('targetFriendId').value = '';
+                switchView('view-contacts');
+            }
+        }
+
+        let chatLastTimestamps = {}; // room_id -> timestamp
+        let currentChatFriend = null;
+
+        function openChat(friend) {
+            currentChatFriend = friend;
+            if (friend.is_group) {
+                currentChatRoomId = friend.friend_id;
+            } else {
+                currentChatRoomId = [myProfile.friend_id, friend.friend_id].sort().join('_');
+            }
+
+            document.getElementById('chatName').innerText = friend.name;
+            document.getElementById('chatAvatar').style.backgroundImage = `url('${friend.avatar}')`;
+            document.getElementById('chatHistory').innerHTML = '';
+            chatLastTimestamps[currentChatRoomId] = 0; // reset delta fetching
+
+            // Mark as read
+            lastReadTimestamps[myProfile.friend_id + '_' + friend.friend_id] = Date.now();
+            localStorage.setItem('rs_last_read', JSON.stringify(lastReadTimestamps));
+            // Hide dot
+            const dot = document.getElementById('dot_' + friend.friend_id);
+            if (dot) dot.style.display = 'none';
+
+            switchView('view-chat');
+            fetchMessages();
+        }
+
+        function openProfileFromChat() {
+            if (currentChatFriend && !currentChatFriend.is_group) {
+                openProfile(currentChatFriend);
+            }
+        }
+
+        async function fetchMessages() {
+            if (!currentChatRoomId) return;
+            let afterTs = chatLastTimestamps[currentChatRoomId] || 0;
+            const res = await fetch(`/api/messages/${currentChatRoomId}?after=${afterTs}`);
+            const msgs = await res.json();
+
+            if (msgs.length === 0) return;
+            const chatBox = document.getElementById('chatHistory');
+
+            msgs.forEach(m => {
+                if (m.timestamp > afterTs) afterTs = m.timestamp;
+                const d = new Date(m.timestamp);
+                const t = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+
+                let cls = 'other';
+                if (m.sender_id === myProfile.friend_id) cls = 'user';
+
+                let contentHTML = m.text;
+                let isImage = m.text.startsWith('data:image/');
+                if (isImage) {
+                    contentHTML = `<img src="${m.text}" alt="Photo">`;
+                }
+
+                let senderNameHtml = '';
+                if (cls === 'other' && currentChatFriend && currentChatFriend.is_group) {
+                    senderNameHtml = `<div style="font-size:0.75rem; color:#94a3b8; margin-bottom:4px; padding-left:2px;">${m.sender_name || 'เพื่อน'}</div>`;
+                }
+
+                chatBox.innerHTML += `
+                    <div class="message-row ${cls}">
+                        <div style="display:flex; flex-direction:column;">
+                            ${senderNameHtml}
+                            <div class="message ${cls}" style="${isImage ? 'padding: 0; background: transparent; border: none;' : ''}">${contentHTML}</div>
+                        </div>
+                        <div class="message-meta">${cls === 'other' && m.sender_id !== 'SYSTEM' && (!currentChatFriend || !currentChatFriend.is_group) ? 'เพื่อน • ' : ''}${t}</div>
+                    </div>
+                `;
+            });
+            chatLastTimestamps[currentChatRoomId] = afterTs;
+
+            if (chatBox.scrollHeight - chatBox.scrollTop < chatBox.clientHeight + 250) {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+
+        function handleQRScan(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    const canvas = document.createElement('canvas');
+
+                    // ย่อขนาดภาพลงให้สแกนง่ายขึ้น (กล้องมือถือภาพใหญ่เกินไป jsQR จะหาไม่เจอ)
+                    const MAX_WIDTH = 800;
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+
+                    // ถมพื้นหลังขาวกันภาพใส
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(0, 0, width, height);
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const imageData = ctx.getImageData(0, 0, width, height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                        inversionAttempts: "attemptBoth",
+                    });
+
+                    if (code) {
+                        document.getElementById('targetFriendId').value = code.data;
+                        alert("สแกนสำเร็จรหัส ID: " + code.data);
+                    } else {
+                        alert("ไม่พบ QR Code แจ้งเพื่อนให้เร่งแสงหน้าจอให้สว่างสุด แล้วพยายามถ่ายเจาะจงเฉพาะกรอบ QR แบบชัดๆ ไม่เบลอครับ\n(ถ้าไม่ได้จริงๆ พิมพ์รหัส 6 หลักแทนได้เลยครับเร็วกว่า)");
+                    }
+                    document.getElementById('qrScanInput').value = ''; // รีเซ็ตเพื่อสแกนซ้ำได้
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                // Compress chat image before sending
+                compressImage(e.target.result, 800, 800, (compressedBase64) => {
+                    sendMessage(compressedBase64);
+                    document.getElementById('photoInput').value = ''; // reset
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- CYBERBULLYING ENGINE (Phase 7 & 12) ---
+        function mapWords(wordsArray, responseTxt) {
+            return wordsArray.map(word => ({ word: word, isEng: false, polite: responseTxt }));
+        }
+
+        // Updated dictionary with specific root words to improve aggressive detection
+        const thaiAppear = [
+            ...mapWords(["อ้วน", "อีอ้วน", "ไอ้อ้วน", "ตัวใหญ่", "เตี้ย", "ตัวเตี้ย", "ม่อต้อ", "ไอ้เตี้ย", "ดำ", "ผิวดำ", "อีดำ", "ไอ้ดำ", "เหยิน", "ฟันเหยิน", "หัวล้าน"], "เราว่าทุกคนมีเสน่ห์ในแบบของตัวเองนะแก ไม่อยากให้วิจารณ์เรื่องรูปลักษณ์เลย"),
+            ...mapWords(["ผอมแห้ง", "ตัวแปลก", "ขี้เหร่", "หน้าแปลก", "หน้าโทรม", "น่าเกลียด"], "เรื่องรูปลักษณ์มันแล้วแต่ค่านิยมคนมองเนอะแก")
+        ];
+        const thaiIntell = mapWords(["โง่", "ปัญญาอ่อน", "กาก", "ภาระทีม", "ห่วยแตก", "สมองทึบ"], "ใจเย็นๆ ค่อยๆ ปรับกันดีกว่าป่าว");
+        const thaiSlang = mapWords(["เหี้ย", "ไอ้เหี้ย", "อีเหี้ย", "สัส", "อีสัส", "ไอ้สัส", "พ่อมึงตาย", "ควย", "ร่าน", "ตอแหล"], "เหยยย แรงไปปะ เบาได้เบา คุยกันดีๆ ดิ");
+
+        const fullDictionaryData = [...thaiAppear, ...thaiIntell, ...thaiSlang];
+        fullDictionaryData.sort((a, b) => b.word.length - a.word.length);
+
+        function checkOffensiveLanguage(inputText) {
+            let isBad = false;
+            let severity = "safe"; // safe, warning, danger
+            let cleanText = inputText;
+
+            for (const item of fullDictionaryData) {
+                if (cleanText.includes(item.word)) {
+                    isBad = true;
+                    severity = thaiSlang.includes(item) || thaiIntell.includes(item) ? "danger" : (thaiAppear.includes(item) ? "warning" : "danger");
+                    cleanText = cleanText.split(item.word).join(item.polite);
+                }
+            }
+            return { isOffensive: isBad, suggestedText: isBad ? cleanText : null, severity: severity };
+        }
+
+        // --- REAL-TIME POLITENESS SCORING ---
+        document.getElementById('messageInput').addEventListener('input', function (e) {
+            const text = e.target.value.trim();
+            const bar = document.getElementById('politeBar');
+            const dot = document.getElementById('politeDot');
+            const ptext = document.getElementById('politeText');
+
+            if (!text) {
+                bar.classList.remove('show');
+                return;
+            }
+
+            bar.classList.add('show');
+            const detection = checkOffensiveLanguage(text);
+
+            if (!detection.isOffensive) {
+                dot.style.background = '#10b981'; // Green
+                ptext.innerText = 'ข้อความสุภาพ น่ารักมากเลยครับ ✨';
+                ptext.style.color = '#10b981';
+            } else if (detection.severity === 'warning') {
+                dot.style.background = '#f59e0b'; // Yellow/Orange
+                ptext.innerText = 'มีความเสี่ยงบูลลี่เรื่องรูปร่าง ⚠️';
+                ptext.style.color = '#f59e0b';
+            } else {
+                dot.style.background = '#ef4444'; // Red
+                ptext.innerText = 'ข้อความรุนแรง ไม่เหมาะสมที่จะส่ง ❌';
+                ptext.style.color = '#ef4444';
+            }
+        });
+
+        function handleSend() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const detection = checkOffensiveLanguage(text);
+            if (detection.isOffensive) {
+                input.blur();
+                currentSuggestion = detection.suggestedText;
+                document.getElementById('suggestedTextDisplay').innerText = currentSuggestion;
+                document.getElementById('warningPopup').classList.add('show');
+            } else {
+                sendMessage(text);
+                document.getElementById('politeBar').classList.remove('show');
+            }
+        }
+
+        document.getElementById('btnUseSuggestion').onclick = () => {
+            if (currentSuggestion) {
+                sendMessage(currentSuggestion);
+                document.getElementById('politeBar').classList.remove('show');
+            }
+            hideWarning();
+        };
+
+        function hideWarning() {
+            document.getElementById('warningPopup').classList.remove('show');
+            currentSuggestion = "";
+            document.getElementById('messageInput').focus();
+        }
+
+        async function sendMessage(finalText) {
+            document.getElementById('messageInput').value = '';
+            document.getElementById('politeBar').classList.remove('show');
+
+            await fetch('/api/messages', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    room_id: currentChatRoomId,
+                    sender_id: myProfile.friend_id,
+                    text: finalText
+                })
+            });
+            fetchMessages();
+        }
+
+        // --- FEED & POSTS SYSTEM (Phase 11) ---
+        let selectedPostImgBase64 = "";
+        let postCurrentSuggestion = "";
+
+        function openCreatePost() {
+            document.getElementById('createPostModal').style.display = 'flex';
+            document.getElementById('postCaption').value = '';
+            document.getElementById('postImagePreview').style.backgroundImage = '';
+            document.getElementById('postImagePreview').innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+            selectedPostImgBase64 = "";
+            hidePostWarning();
+        }
+
+        function closeCreatePost() {
+            document.getElementById('createPostModal').style.display = 'none';
+        }
+
+        function previewPostImg(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    selectedPostImgBase64 = e.target.result;
+                    document.getElementById('postImagePreview').style.backgroundImage = `url('${selectedPostImgBase64}')`;
+                    document.getElementById('postImagePreview').innerHTML = '';
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function renderPosts(posts, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            if (posts.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding: 40px; color:#94a3b8;">ยังไม่มีโพสต์เลย<br>ลองกด + เพื่อเริ่มโพสต์สิ!</div>';
+                return;
+            }
+
+            posts.forEach(p => {
+                const d = new Date(p.timestamp);
+                const t = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')} - ${d.getDate()}/${d.getMonth() + 1}`;
+
+                let imgHtml = p.image_data ? `<img src="${p.image_data}" class="post-image" style="display:block;">` : '';
+
+                container.innerHTML += `
+                    <div class="post-card" id="post-card-${p.id}">
+                        <div class="post-header">
+                            <div class="avatar" style="background-image: url('${p.avatar}')" onclick="openProfile({name:'${p.name}', friend_id:'${p.user_id}', avatar:'${p.avatar}'});"></div>
+                            <div class="info"><h4>${p.name}</h4><p>${t}</p></div>
+                        </div>
+                        <div class="post-content">${p.caption}</div>
+                        ${imgHtml}
+                        <div class="post-actions" style="display:flex; gap:15px; margin-top:12px;">
+                            <button id="like-btn-${p.id}" onclick="toggleLike(${p.id})" style="background:none; border:none; display:flex; align-items:center; gap:5px; cursor:pointer; color: ${p.has_liked ? '#ef4444' : '#64748b'}; font-weight: 500;">
+                                <svg id="like-svg-${p.id}" width="20" height="20" viewBox="0 0 24 24" fill="${p.has_liked ? '#ef4444' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                                <span id="like-count-${p.id}">${p.like_count}</span>
+                            </button>
+                            <button onclick="openComments(${p.id})" style="background:none; border:none; display:flex; align-items:center; gap:5px; cursor:pointer; color: #64748b; font-weight: 500;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                <span id="comment-count-${p.id}">${p.comment_count || 0}</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function fetchPosts(authorId = null, isMyProfile = false) {
+            const url = authorId ? `/api/posts?user_id=${myProfile.friend_id}&author_id=${authorId}` : `/api/posts?user_id=${myProfile.friend_id}`;
+            const res = await fetch(url);
+            const posts = await res.json();
+
+            if (isMyProfile) {
+                renderPosts(posts, 'myProfileFeedContainer');
+            } else if (authorId) {
+                renderPosts(posts, 'profileFeedContainer');
+            } else {
+                renderPosts(posts, 'feedContainer');
+            }
+        }
+
+        function openProfile(f) {
+            if (!f.name || !f.friend_id) return;
+            document.getElementById('profileViewName').innerText = f.name;
+            document.getElementById('profileViewTitle').innerText = f.name;
+            document.getElementById('profileViewAvatar').style.backgroundImage = `url('${f.avatar}')`;
+            switchView('view-profile');
+            fetchPosts(f.friend_id, false); // This will load specific feed into profileFeedContainer
+        }
+
+        async function jumpToPost(postId) {
+            // Open the user's specific profile to find the post
+            openProfile(myProfile);
+
+            // Wait for fetchPosts to finish populating the container
+            setTimeout(() => {
+                const postEl = document.getElementById(`post-card-${postId}`);
+                if (postEl) {
+                    postEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    const originalBg = postEl.style.background || 'white';
+                    postEl.style.transition = 'background 0.5s ease-out';
+                    postEl.style.background = '#fef08a'; // Light yellow highlight
+
+                    setTimeout(() => {
+                        postEl.style.background = originalBg;
+                    }, 2000);
+                } else {
+                    console.warn("Post not found in DOM");
+                }
+            }, 600); // 600ms buffer for Network request & DOM rendering
+        }
+
+        function handleEditAvatar(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                compressImage(e.target.result, 400, 400, async (compressedBase64) => {
+                    // Call API to update
+                    const res = await fetch(`/api/users/${myProfile.friend_id}/avatar`, {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ avatar: compressedBase64 })
+                    });
+                    if (res.ok) {
+                        myProfile.avatar = compressedBase64;
+                        document.getElementById('myAvatar').style.backgroundImage = `url('${compressedBase64}')`;
+                    }
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function editMyName() {
+            const newName = prompt("ใส่ชื่อใหม่ของคุณ:", myProfile.name);
+            if (newName && newName.trim() !== "" && newName !== myProfile.name) {
+                const res = await fetch(`/api/users/${myProfile.friend_id}/name`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newName.trim() })
+                });
+                if (res.ok) {
+                    myProfile.name = newName.trim();
+                    document.getElementById('myName').innerText = myProfile.name;
+                }
+            }
+        }
+
+        async function openNotifications() {
+            document.getElementById('notificationsModal').style.display = 'flex';
+            const list = document.getElementById('notificationsList');
+            list.innerHTML = '<div style="text-align:center; padding: 20px; color:var(--text-muted); font-size:0.9rem;">กำลังโหลด...</div>';
+
+            const res = await fetch(`/api/notifications/${myProfile.friend_id}`);
+            const data = await res.json();
+
+            list.innerHTML = '';
+            if (data.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding: 40px; color:var(--text-muted);">ยังไม่มีการแจ้งเตือนใหม่ครับ</div>';
+            } else {
+                data.forEach(n => {
+                    const d = new Date(n.timestamp);
+                    const t = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+
+                    let actionText = "มีการโต้ตอบ";
+                    if (n.action_type === 'like') actionText = "❤️ กดถูกใจโพสต์ของคุณ";
+                    if (n.action_type === 'comment') actionText = "💬 คอมเมนต์บนโพสต์ของคุณ";
+                    if (n.action_type === 'reply') actionText = "💬 ตอบกลับคอมเมนต์ของคุณ";
+
+                    let bg = n.read_status === 0 ? 'var(--bubble-other)' : 'transparent';
+                    let dotHtml = n.read_status === 0 ? '<div style="width:8px; height:8px; border-radius:50%; background:#ef4444; position:absolute; right:12px; top:12px;"></div>' : '';
+
+                    list.innerHTML += `
+                        <div class="comment-item" style="position:relative; background:${bg}; padding:12px; border-radius:12px; margin-bottom:8px; cursor:pointer;" onclick="closeNotifications(); jumpToPost(${n.post_id});">
+                            ${dotHtml}
+                            <div class="avatar" style="background-image: url('${n.actor_avatar}'); width:42px; height:42px; flex-shrink:0;"></div>
+                            <div class="comment-content" style="background:transparent; padding:0; border:none; margin-left:12px; max-width:85%;">
+                                <h5 style="font-size:0.95rem; color:var(--text-main); margin-bottom:4px;">${n.actor_name} <br><span style="font-weight:normal; font-size:0.85rem; color:var(--text-muted);">${actionText}</span></h5>
+                                <div style="font-size:0.75rem; color:var(--text-muted);">${t}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            // Mark all as read
+            await fetch(`/api/notifications/${myProfile.friend_id}/read`, { method: 'POST' });
+            // Hide notification bells
+            const bell1 = document.getElementById('bellGlobalDot');
+            const bell2 = document.getElementById('bellGlobalDotFeed');
+            if (bell1) bell1.style.display = 'none';
+            if (bell2) bell2.style.display = 'none';
+        }
+
+        function closeNotifications() {
+            document.getElementById('notificationsModal').style.display = 'none';
+        }
+
+        async function toggleLike(postId) {
+            // Optimistic Update
+            const btn = document.getElementById(`like-btn-${postId}`);
+            const svg = document.getElementById(`like-svg-${postId}`);
+            const span = document.getElementById(`like-count-${postId}`);
+            if (!btn) return;
+
+            let isLiked = svg.getAttribute('fill') === '#ef4444';
+            let count = parseInt(span.innerText);
+
+            if (isLiked) {
+                svg.setAttribute('fill', 'none');
+                btn.style.color = '#64748b';
+                span.innerText = count - 1;
+            } else {
+                svg.setAttribute('fill', '#ef4444');
+                btn.style.color = '#ef4444';
+                span.innerText = count + 1;
+            }
+
+            const res = await fetch(`/api/posts/${postId}/like`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: myProfile.friend_id })
+            });
+            const data = await res.json();
+
+            // Sync
+            svg.setAttribute('fill', data.liked ? '#ef4444' : 'none');
+            btn.style.color = data.liked ? '#ef4444' : '#64748b';
+            span.innerText = data.count;
+        }
+
+        // --- COMMENTS LOGIC ---
+        let targetCommentPostId = null;
+        let commentCurrentSuggestion = "";
+        let replyingToCommentId = null;
+
+        function cancelReply() {
+            replyingToCommentId = null;
+            document.getElementById('replyingIndicator').style.display = 'none';
+            const input = document.getElementById('commentInput');
+            input.placeholder = "พิมพ์ความคิดเห็น...";
+            input.focus();
+        }
+
+        function replyToComment(commentId, authorName) {
+            replyingToCommentId = commentId;
+            document.getElementById('replyingIndicator').style.display = 'flex';
+            document.getElementById('replyingIndicator').querySelector('span').innerText = `ตอบกลับ ${authorName}...`;
+            const input = document.getElementById('commentInput');
+            input.placeholder = `ตอบกลับ ${authorName}...`;
+            input.focus();
+        }
+
+        async function openComments(postId) {
+            targetCommentPostId = postId;
+            document.getElementById('commentsModal').style.display = 'flex';
+            document.getElementById('commentInput').value = '';
+            hideCommentWarning();
+            cancelReply();
+            await fetchComments();
+        }
+
+        function closeComments() {
+            document.getElementById('commentsModal').style.display = 'none';
+        }
+
+        async function fetchComments() {
+            if (!targetCommentPostId) return;
+            const res = await fetch(`/api/posts/${targetCommentPostId}/comments`);
+            const comments = await res.json();
+            const list = document.getElementById('commentsList');
+            list.innerHTML = '';
+
+            if (comments.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding: 20px; color:#94a3b8; font-size:0.9rem;">ยังไม่มีความคิดเห็น<br>เป็นคนแรกสิ!</div>';
+                return;
+            }
+
+            // Group by parent_id
+            const parents = comments.filter(c => !c.parent_id);
+            const childrenMap = {};
+            comments.filter(c => c.parent_id).forEach(c => {
+                if (!childrenMap[c.parent_id]) childrenMap[c.parent_id] = [];
+                childrenMap[c.parent_id].push(c);
+            });
+
+            parents.forEach(p => {
+                const d = new Date(p.timestamp);
+                const t = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+
+                list.innerHTML += `
+                    <div class="comment-item">
+                        <div class="avatar" style="background-image: url('${p.avatar}')"></div>
+                        <div class="comment-content">
+                            <h5>${p.name} <span style="font-size:0.7rem; font-weight:400; color:var(--text-muted);">${t}</span></h5>
+                            <div>${p.text}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted); cursor:pointer; font-weight:600; margin-top:4px;" onclick="replyToComment(${p.id}, '${p.name}')">ตอบกลับ</div>
+                        </div>
+                    </div>
+                `;
+
+                if (childrenMap[p.id]) {
+                    childrenMap[p.id].forEach(child => {
+                        const cd = new Date(child.timestamp);
+                        const ct = `${cd.getHours().toString().padStart(2, '0')}:${cd.getMinutes().toString().padStart(2, '0')}`;
+                        list.innerHTML += `
+                            <div class="comment-item" style="margin-left:45px; margin-top:-5px;">
+                                <div class="avatar" style="background-image: url('${child.avatar}'); width:34px; height:34px;"></div>
+                                <div class="comment-content" style="background:transparent; border:1px solid var(--border-color);">
+                                    <h5>${child.name} <span style="font-size:0.7rem; font-weight:400; color:var(--text-muted);">${ct}</span></h5>
+                                    <div>${child.text}</div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted); cursor:pointer; font-weight:600; margin-top:4px;" onclick="replyToComment(${p.id}, '${child.name}')">ตอบกลับ</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+            });
+            list.scrollTop = list.scrollHeight;
+        }
+
+        function evaluateComment() {
+            const input = document.getElementById('commentInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const detection = checkOffensiveLanguage(text);
+            if (detection.isOffensive) {
+                input.blur();
+                commentCurrentSuggestion = detection.suggestedText;
+                document.getElementById('commentSuggestedText').innerText = commentCurrentSuggestion;
+                document.getElementById('commentWarningPopup').style.display = 'block';
+            } else {
+                sendFinalComment(text);
+            }
+        }
+
+        function applyCommentSuggestion() {
+            if (commentCurrentSuggestion) sendFinalComment(commentCurrentSuggestion);
+        }
+        function hideCommentWarning() {
+            document.getElementById('commentWarningPopup').style.display = 'none';
+            commentCurrentSuggestion = "";
+        }
+
+        async function sendFinalComment(finalText) {
+            hideCommentWarning();
+            document.getElementById('commentInput').value = '';
+
+            // Update Feed count
+            const countSpan = document.getElementById(`comment-count-${targetCommentPostId}`);
+            if (countSpan) countSpan.innerText = parseInt(countSpan.innerText) + 1;
+
+            const reqBody = { user_id: myProfile.friend_id, text: finalText };
+            if (replyingToCommentId) {
+                reqBody.parent_id = replyingToCommentId;
+            }
+
+            await fetch(`/api/posts/${targetCommentPostId}/comments`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reqBody)
+            });
+
+            cancelReply();
+            await fetchComments();
+        }
+
+        function submitPost() {
+            const caption = document.getElementById('postCaption').value.trim();
+            if (!caption && !selectedPostImgBase64) return alert("กรุณาพิมพ์ข้อความหรือเลือกรูปภาพครับ");
+
+            // Pre-post Warning Check
+            if (caption) {
+                const detection = checkOffensiveLanguage(caption);
+                if (detection.isOffensive) {
+                    postCurrentSuggestion = detection.suggestedText;
+                    document.getElementById('postSuggestedText').innerText = postCurrentSuggestion;
+                    document.getElementById('postWarningPopup').style.display = 'block';
+                    return; // Stop posting
+                }
+            }
+
+            finalizePost(caption);
+        }
+
+        function applyPostSuggestion() {
+            if (postCurrentSuggestion) {
+                finalizePost(postCurrentSuggestion);
+            }
+        }
+
+        function hidePostWarning() {
+            document.getElementById('postWarningPopup').style.display = 'none';
+            postCurrentSuggestion = "";
+        }
+
+        async function finalizePost(finalCaption) {
+            hidePostWarning();
+
+            // 1. UI Loading State on Button
+            const btnSubmit = document.getElementById('btnSubmitPost') || document.querySelector('.btn-primary[onclick="submitPost()"]');
+            let spinner, btnText;
+            if (btnSubmit) {
+                spinner = document.getElementById('postSpinner');
+                btnText = btnSubmit.querySelector('span');
+                btnSubmit.disabled = true;
+                btnSubmit.style.opacity = '0.7';
+                if (btnText) btnText.innerText = 'กำลังโพสต์...';
+                if (spinner) spinner.style.display = 'block';
+            }
+
+            // 2. Optimistic UI: Create a temporary post object and inject it immediately
+            const tempPostId = 'temp-' + Date.now();
+            const tempPost = {
+                id: tempPostId,
+                caption: finalCaption,
+                user_id: myProfile.friend_id,
+                name: myProfile.name,
+                avatar: myProfile.avatar,
+                image_data: selectedPostImgBase64,
+                timestamp: Date.now(),
+                like_count: 0,
+                comment_count: 0,
+                has_liked: false
+            };
+
+            // Prepend temp post to Feed
+            const feedContainer = document.getElementById('feedContainer');
+            if (feedContainer.innerHTML.includes('ยังไม่มีโพสต์เลย')) {
+                feedContainer.innerHTML = ''; // Clear empty message
+            }
+
+            // Create DOM element for temp post
+            const d = new Date(tempPost.timestamp);
+            const t = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')} - ${d.getDate()}/${d.getMonth() + 1}`;
+            let imgHtml = tempPost.image_data ? `<img src="${tempPost.image_data}" class="post-image" style="display:block; opacity: 0.6;">` : '';
+
+            const tempHtml = `
+                <div class="post-card" id="post-card-${tempPost.id}" style="opacity: 0.6; pointer-events: none; border: 1px dashed #cbd5e1; position: relative;">
+                    <div style="position: absolute; top: 15px; right: 15px; font-size: 0.75rem; color: #3b82f6; font-weight: 600; display:flex; align-items:center; gap:4px;">
+                        <svg style="animation: spin 1s linear infinite;" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                        กำลังประมวลผล...
+                    </div>
+                    <div class="post-header">
+                        <div class="avatar" style="background-image: url('${tempPost.avatar}')"></div>
+                        <div class="info"><h4>${tempPost.name}</h4><p>${t}</p></div>
+                    </div>
+                    <div class="post-content">${tempPost.caption}</div>
+                    ${imgHtml}
+                    <div class="post-actions" style="display:flex; gap:15px; margin-top:12px;">
+                        <button style="background:none; border:none; display:flex; align-items:center; gap:5px; color: #64748b; font-weight: 500;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg> 0
+                        </button>
+                    </div>
+                </div>
+            `;
+            feedContainer.insertAdjacentHTML('afterbegin', tempHtml);
+            closeCreatePost();
+
+            // Optional: reset modal form so it's clean for next time
+            document.getElementById('postCaption').value = '';
+            document.getElementById('postImagePreview').style.backgroundImage = '';
+            selectedPostImgBase64 = "";
+
+            try {
+                // 3. Actual API call (mocked in demo)
+                await fetch('/api/posts', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: myProfile.friend_id,
+                        image_data: tempPost.image_data,
+                        caption: finalCaption
+                    })
+                });
+            } catch (err) {
+                console.error("Posting failed", err);
+            } finally {
+                // 4. Reset Button State
+                if (btnSubmit) {
+                    btnSubmit.disabled = false;
+                    btnSubmit.style.opacity = '1';
+                    if (btnText) btnText.innerText = 'โพสต์เลย';
+                    if (spinner) spinner.style.display = 'none';
+                }
+
+                // 5. Hard refresh feed to get real ID and finalized state
+                // Since this is a demo, let's just make the temporary post look permanent instead of refreshing
+                // to avoid losing it (since the mock API doesn't actually store new posts to return)
+                const tempCard = document.getElementById(`post-card-${tempPost.id}`);
+                if (tempCard) {
+                    tempCard.style.opacity = '1';
+                    tempCard.style.pointerEvents = 'auto';
+                    tempCard.style.border = '1px solid #e2e8f0';
+                    const loadingText = tempCard.querySelector('div[style*="top: 15px"]');
+                    if (loadingText) loadingText.remove();
+
+                    const postImage = tempCard.querySelector('.post-image');
+                    if (postImage) postImage.style.opacity = '1';
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
