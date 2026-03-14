@@ -2398,11 +2398,11 @@
 
         // Updated dictionary with specific root words to improve aggressive detection
         const thaiAppear = [
-            ...mapWords(["อ้วน", "อีอ้วน", "ไอ้อ้วน", "ตัวใหญ่", "เตี้ย", "ตัวเตี้ย", "ม่อต้อ", "ไอ้เตี้ย", "ดำ", "ผิวดำ", "อีดำ", "ไอ้ดำ", "เหยิน", "ฟันเหยิน", "หัวล้าน"], "เราว่าทุกคนมีเสน่ห์ในแบบของตัวเองนะแก ไม่อยากให้วิจารณ์เรื่องรูปลักษณ์เลย"),
-            ...mapWords(["ผอมแห้ง", "ตัวแปลก", "ขี้เหร่", "หน้าแปลก", "หน้าโทรม", "น่าเกลียด"], "เรื่องรูปลักษณ์มันแล้วแต่ค่านิยมคนมองเนอะแก")
+            ...mapWords(["อ้วน", "อีอ้วน", "ไอ้อ้วน", "ตัวใหญ่", "เตี้ย", "ตัวเตี้ย", "ม่อต้อ", "ไอ้เตี้ย", "ดำ", "ผิวดำ", "อีดำ", "ไอ้ดำ", "เหยิน", "ฟันเหยิน", "หัวล้าน", "ขาใหญ่", "ตูดใหญ่"], "เราว่าทุกคนมีเสน่ห์ในแบบของตัวเองนะแก ไม่อยากให้วิจารณ์เรื่องรูปลักษณ์เลย"),
+            ...mapWords(["ผอมแห้ง", "ตัวแปลก", "ขี้เหร่", "หน้าแปลก", "หน้าโทรม", "น่าเกลียด", "หน้าผี", "ตัวตลก"], "เรื่องรูปลักษณ์มันแล้วแต่ค่านิยมคนมองเนอะแก")
         ];
-        const thaiIntell = mapWords(["โง่", "ปัญญาอ่อน", "กาก", "ภาระทีม", "ห่วยแตก", "สมองทึบ"], "ใจเย็นๆ ค่อยๆ ปรับกันดีกว่าป่าว");
-        const thaiSlang = mapWords(["เหี้ย", "ไอ้เหี้ย", "อีเหี้ย", "สัส", "อีสัส", "ไอ้สัส", "พ่อมึงตาย", "ควย", "ร่าน", "ตอแหล"], "เหยยย แรงไปปะ เบาได้เบา คุยกันดีๆ ดิ");
+        const thaiIntell = mapWords(["โง่", "ปัญญาอ่อน", "กาก", "ภาระทีม", "ห่วยแตก", "สมองทึบ", "ควาย", "เอ๋อ", "เด็กเอ๋อ", "สติไม่ดี", "ไร้สมอง"], "ใจเย็นๆ ค่อยๆ ปรับกันดีกว่าป่าว");
+        const thaiSlang = mapWords(["เหี้ย", "ไอ้เหี้ย", "อีเหี้ย", "สัส", "อีสัส", "ไอ้สัส", "พ่อมึงตาย", "ควย", "ร่าน", "ตอแหล", "สัด", "เย็ด", "หน้าหี", "ปากหมา", "จัญไร", "ระยำ"], "เหยยย แรงไปปะ เบาได้เบา คุยกันดีๆ ดิ");
 
         const fullDictionaryData = [...thaiAppear, ...thaiIntell, ...thaiSlang];
         fullDictionaryData.sort((a, b) => b.word.length - a.word.length);
@@ -2786,7 +2786,8 @@
                 list.innerHTML = '<div style="text-align:center; padding: 40px; color:var(--text-muted);">ยังไม่มีการแจ้งเตือนใหม่ครับ</div>';
             } else {
                 data.forEach(n => {
-                    const d = new Date(n.timestamp);
+                    const nts = Number(n.timestamp);
+                    const d = nts > 0 ? new Date(nts) : new Date();
                     const t = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 
                     let actionText = "มีการโต้ตอบ";
@@ -2926,7 +2927,8 @@
 
                 if (childrenMap[p.id]) {
                     childrenMap[p.id].forEach(child => {
-                        const cd = new Date(child.timestamp);
+                        const cts = Number(child.timestamp);
+                        const cd = cts > 0 ? new Date(cts) : new Date();
                         const ct = `${cd.getHours().toString().padStart(2, '0')}:${cd.getMinutes().toString().padStart(2, '0')}`;
                         list.innerHTML += `
                             <div class="comment-item" style="margin-left:45px; margin-top:-5px;">
@@ -3056,7 +3058,8 @@
             }
 
             // Create DOM element for temp post
-            const d = new Date(tempPost.timestamp);
+            const pts = Number(tempPost.timestamp);
+            const d = pts > 0 ? new Date(pts) : new Date();
             const t = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')} - ${d.getDate()}/${d.getMonth() + 1}`;
             let imgHtml = tempPost.image_data ? `<img src="${tempPost.image_data}" class="post-image" style="display:block; opacity: 0.6;">` : '';
 
