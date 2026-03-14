@@ -2665,7 +2665,8 @@
             }
 
             posts.forEach(p => {
-                const d = new Date(p.timestamp);
+                const ts = Number(p.timestamp);
+                const d = ts > 0 ? new Date(ts) : new Date();
                 const t = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')} - ${d.getDate()}/${d.getMonth() + 1}`;
 
                 let imgHtml = p.image_data ? `<img src="${p.image_data}" class="post-image" style="display:block;">` : '';
