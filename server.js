@@ -1,110 +1,109 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
+require('dotenv').config();
 const cors = require('cors');
 const path = require('path');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Support base64 images
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Connect to SQLite DB
-const dbPath = path.join(__dirname, '../../../../Downloads/respect_chat_v2.db');
-const db = new sqlite3.Database(dbPath, (err) => {
+// Connect to PostgreSQL DB
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+});
+
+pool.connect((err, client, release) => {
     if (err) {
-        console.error('Error opening database', err.message);
+        console.error('Error opening database', err.stack);
     } else {
-        console.log('Connected to the SQLite database (v2).');
+        console.log('Connected to the PostgreSQL database.');
+        release();
         
-        // Initialize Schema for v2
-        db.serialize(() => {
-            db.run(`CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+        // Initialize Schema for Postgres
+        const initQueries = `
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
                 friend_id TEXT UNIQUE NOT NULL,
                 name TEXT NOT NULL,
                 avatar_seed TEXT NOT NULL,
                 phone_number TEXT UNIQUE NOT NULL
-            )`);
-            db.run(`CREATE TABLE IF NOT EXISTS friends (
+            );
+            CREATE TABLE IF NOT EXISTS friends (
                 user_id TEXT NOT NULL,
                 friend_id TEXT NOT NULL,
                 UNIQUE(user_id, friend_id)
-            )`);
-            db.run(`CREATE TABLE IF NOT EXISTS messages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+            );
+            CREATE TABLE IF NOT EXISTS messages (
+                id SERIAL PRIMARY KEY,
                 room_id TEXT NOT NULL,
                 sender_id TEXT NOT NULL,
                 text TEXT NOT NULL,
-                timestamp INTEGER NOT NULL
-            )`);
-            db.run(`CREATE TABLE IF NOT EXISTS posts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp BIGINT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS posts (
+                id SERIAL PRIMARY KEY,
                 user_id TEXT NOT NULL,
                 image_data TEXT,
                 caption TEXT NOT NULL,
-                timestamp INTEGER NOT NULL
-            )`);
-            db.run(`CREATE TABLE IF NOT EXISTS post_likes (
+                timestamp BIGINT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS post_likes (
                 post_id INTEGER NOT NULL,
                 user_id TEXT NOT NULL,
                 UNIQUE(post_id, user_id)
-            )`);
-            db.run(`CREATE TABLE IF NOT EXISTS post_comments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+            );
+            CREATE TABLE IF NOT EXISTS post_comments (
+                id SERIAL PRIMARY KEY,
                 post_id INTEGER NOT NULL,
                 user_id TEXT NOT NULL,
                 parent_id INTEGER,
                 text TEXT NOT NULL,
-                timestamp INTEGER NOT NULL
-            )`);
-            db.run(`CREATE TABLE IF NOT EXISTS notifications (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp BIGINT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS notifications (
+                id SERIAL PRIMARY KEY,
                 target_user_id TEXT NOT NULL,
                 actor_user_id TEXT NOT NULL,
                 action_type TEXT NOT NULL,
                 post_id INTEGER,
                 read_status INTEGER DEFAULT 0,
-                timestamp INTEGER NOT NULL
-            )`);
-            db.run(`CREATE TABLE IF NOT EXISTS groups (
+                timestamp BIGINT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS groups (
                 group_id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
                 avatar TEXT,
                 members TEXT NOT NULL,
-                created_at INTEGER NOT NULL
-            )`);
-        });
+                created_at BIGINT NOT NULL
+            );
+        `;
+        pool.query(initQueries).catch(e => console.error("Init Error", e));
     }
 });
 
-// Helper for DB queries
-const dbRun = (query, params = []) => {
-    return new Promise((resolve, reject) => {
-        db.run(query, params, function (err) {
-            if (err) reject(err);
-            else resolve(this);
-        });
-    });
+// Helper for DB queries. Transforms `?` to `$1`, `$2`... for Postgres
+const transformQuery = (query) => {
+    let index = 1;
+    return query.replace(/\?/g, () => `$${index++}`);
 };
 
-const dbGet = (query, params = []) => {
-    return new Promise((resolve, reject) => {
-        db.get(query, params, (err, row) => {
-            if (err) reject(err);
-            else resolve(row);
-        });
-    });
+const dbRun = async (query, params = []) => {
+    return pool.query(transformQuery(query), params);
 };
 
-const dbAll = (query, params = []) => {
-    return new Promise((resolve, reject) => {
-        db.all(query, params, (err, rows) => {
-            if (err) reject(err);
-            else resolve(rows);
-        });
-    });
+const dbGet = async (query, params = []) => {
+    const res = await pool.query(transformQuery(query), params);
+    return res.rows[0];
+};
+
+const dbAll = async (query, params = []) => {
+    const res = await pool.query(transformQuery(query), params);
+    return res.rows;
 };
 
 // --- AUTH & USER ---
@@ -121,7 +120,7 @@ app.post('/api/register', async (req, res) => {
         );
         res.json({ friend_id, name, avatar: finalAvatar, phone_number });
     } catch (err) {
-        if (err.message.includes('UNIQUE constraint failed')) {
+        if (err.code === '23505' || err.message.includes('UNIQUE constraint failed')) {
             res.json({ error: 'เบอร์โทรศัพท์นี้ลงทะเบียนไปแล้วครับ สามารถใช้ Login ได้เลย' });
         } else {
             res.json({ error: 'เกิดข้อผิดพลาด: ' + err.message });
@@ -174,9 +173,9 @@ app.post('/api/add_friend', async (req, res) => {
         const targetUser = await dbGet(`SELECT name FROM users WHERE friend_id = ?`, [target_friend_id]);
         if (!targetUser) return res.json({ error: 'ไม่พบผู้ใช้ที่ระบุ' });
 
-        // Add both ways
-        await dbRun(`INSERT OR IGNORE INTO friends (user_id, friend_id) VALUES (?, ?)`, [my_id, target_friend_id]);
-        await dbRun(`INSERT OR IGNORE INTO friends (user_id, friend_id) VALUES (?, ?)`, [target_friend_id, my_id]);
+        // Add both ways. Ignore on Postgres using ON CONFLICT DO NOTHING
+        await dbRun(`INSERT INTO friends (user_id, friend_id) VALUES (?, ?) ON CONFLICT DO NOTHING`, [my_id, target_friend_id]);
+        await dbRun(`INSERT INTO friends (user_id, friend_id) VALUES (?, ?) ON CONFLICT DO NOTHING`, [target_friend_id, my_id]);
 
         res.json({ name: targetUser.name });
     } catch (err) {
